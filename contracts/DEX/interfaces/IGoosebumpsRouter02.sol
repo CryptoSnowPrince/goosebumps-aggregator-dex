@@ -2,9 +2,9 @@
 
 pragma solidity >=0.6.2;
 
-import './IGooseBumpsSwapRouter01.sol';
+import './IGoosebumpsRouter01.sol';
 
-interface IGooseBumpsSwapRouter02 is IGooseBumpsSwapRouter01 {
+interface IGoosebumpsRouter02 is IGoosebumpsRouter01 {
     function removeLiquidityETHSupportingFeeOnTransferTokens(
         address token,
         uint liquidity,
