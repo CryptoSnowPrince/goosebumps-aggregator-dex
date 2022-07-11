@@ -10,7 +10,7 @@ contract GoosebumpsERC20 {
     string public constant name = 'Goosebumps LPs';
     string public constant symbol = 'Goosebumps-LP';
     uint8 public constant decimals = 18;
-    uint  public totalSupply;
+    uint256 public totalSupply;
     mapping(address => uint) public balanceOf;
     mapping(address => mapping(address => uint)) public allowance;
 
@@ -22,7 +22,7 @@ contract GoosebumpsERC20 {
     event Approval(address indexed owner, address indexed spender, uint value);
     event Transfer(address indexed from, address indexed to, uint value);
 
-    constructor() public {
+    constructor() {
         uint chainId;
         assembly {
             chainId := chainid()
@@ -80,7 +80,7 @@ contract GoosebumpsERC20 {
     }
 
     function permit(address owner, address spender, uint value, uint deadline, uint8 v, bytes32 r, bytes32 s) external {
-        require(deadline >= block.timestamp, 'Goosebumps: EXPIRED');
+        require(deadline >= block.timestamp, 'GoosebumpsERC20: EXPIRED');
         bytes32 digest = keccak256(
             abi.encodePacked(
                 '\x19\x01',
@@ -89,7 +89,7 @@ contract GoosebumpsERC20 {
             )
         );
         address recoveredAddress = ecrecover(digest, v, r, s);
-        require(recoveredAddress != address(0) && recoveredAddress == owner, 'Goosebumps: INVALID_SIGNATURE');
+        require(recoveredAddress != address(0) && recoveredAddress == owner, 'GoosebumpsERC20: INVALID_SIGNATURE');
         _approve(owner, spender, value);
     }
 }
