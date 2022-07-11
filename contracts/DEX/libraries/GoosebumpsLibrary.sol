@@ -17,7 +17,7 @@ library GoosebumpsLibrary {
     function quote(uint256 amountA, uint256 reserveA, uint256 reserveB) internal pure returns (uint256 amountB) {
         require(amountA > 0, 'GoosebumpsLibrary: INSUFFICIENT_AMOUNT');
         require(reserveA > 0 && reserveB > 0, 'GoosebumpsLibrary: INSUFFICIENT_LIQUIDITY');
-        amountB = amountA.mul(reserveB) / reserveA;
+        amountB = amountA * reserveB / reserveA;
     }
 
     // calculates the CREATE2 address for a pair without making any external calls
@@ -51,9 +51,9 @@ library GoosebumpsLibrary {
             (fee,) = IFeeAggregator(feeAggregator).calculateFee(tokenIn, amountIn);
             amountIn -= fee;
         }
-        amountIn = amountIn.mul(10000 - lpFee);
-        uint256 numerator = amountIn.mul(reserveOut);
-        uint256 denominator = reserveIn.mul(10000).add(amountIn);
+        amountIn = amountIn * (10000 - lpFee);
+        uint256 numerator = amountIn * reserveOut;
+        uint256 denominator = reserveIn * 10000 + amountIn;
         amountOut = numerator / denominator;
     }
 
@@ -69,9 +69,9 @@ library GoosebumpsLibrary {
             (fee,) = IFeeAggregator(feeAggregator).calculateFee(tokenOut, amountOut);
             amountOut += fee;
         }
-        uint256 numerator = reserveIn.mul(amountOut).mul(10000);
-        uint256 denominator = reserveOut.sub(amountOut).mul(10000 - lpFee);
-        amountIn = (numerator / denominator).add(1);
+        uint256 numerator = reserveIn * amountOut * 10000;
+        uint256 denominator = (reserveOut - amountOut) * (10000 - lpFee);
+        amountIn = numerator / denominator + 1;
     }
 
     // performs chained getAmountOut calculations on any number of pairs
