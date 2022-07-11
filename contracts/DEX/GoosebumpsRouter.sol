@@ -199,7 +199,7 @@ contract GoosebumpsRouter is IGoosebumpsRouter {
             address(this),
             deadline
         );
-        TransferHelper.safeTransfer(token, to, IBEP20(token).balanceOf(address(this)));
+        TransferHelper.safeTransfer(token, to, IERC20(token).balanceOf(address(this)));
         IWETH(WETH).withdraw(amountETH);
         TransferHelper.safeTransferETH(to, amountETH);
     }
@@ -428,7 +428,7 @@ contract GoosebumpsRouter is IGoosebumpsRouter {
         internal virtual returns (uint256 amountOutput) 
     {
         (uint256 reserve0, uint256 reserve1,) = pair.getReserves();
-        uint256 amountInput = IBEP20(input).balanceOf(address(pair)).sub(input == token0 ? reserve0 : reserve1);
+        uint256 amountInput = IERC20(input).balanceOf(address(pair)) - (input == token0 ? reserve0 : reserve1);
         (amountOutput,) = IGoosebumpsRouterPairs(routerPairs).getAmountOut(
             factory,
             input,
@@ -452,10 +452,10 @@ contract GoosebumpsRouter is IGoosebumpsRouter {
             path[0], msg.sender, IGoosebumpsRouterPairs(routerPairs).pairFor(factories[0], path[0], path[1]), amountIn
         );
 
-        uint256 balanceBefore = IBEP20(path[path.length - 1]).balanceOf(to);
+        uint256 balanceBefore = IERC20(path[path.length - 1]).balanceOf(to);
         _swapSupportingFeeOnTransferTokens(factories, path, to);
         require(
-            IBEP20(path[path.length - 1]).balanceOf(to).sub(balanceBefore) >= amountOutMin,
+            IERC20(path[path.length - 1]).balanceOf(to) - balanceBefore >= amountOutMin,
             'GoosebumpsRouter: INSUFFICIENT_OUTPUT_AMOUNT'
         );
     }
@@ -468,17 +468,16 @@ contract GoosebumpsRouter is IGoosebumpsRouter {
     ) external virtual override payable ensure(deadline) {
         require(path[0] == WETH, 'GoosebumpsRouter: INVALID_PATH');
         uint256 amountIn = msg.value;
-        IGoosebumpsWETHWrapper(WETHWrapper).deposit{value: amountIn}();
+        IWETH(WETH).deposit{value: amountIn}();
         
         (amountIn,) = subtractFee(msg.sender, WETH, amountIn);
 
-        assert(IGoosebumpsWETHWrapper(WETHWrapper).transfer(IGoosebumpsRouterPairs(routerPairs)
-            .pairFor(factories[0], path[0], path[1]), amountIn));
+        assert(IWETH(WETH).transfer(IGoosebumpsRouterPairs(routerPairs).pairFor(factories[0], path[0], path[1]), amountIn));
 
-        uint256 balanceBefore = IBEP20(path[path.length - 1]).balanceOf(to);
+        uint256 balanceBefore = IERC20(path[path.length - 1]).balanceOf(to);
         _swapSupportingFeeOnTransferTokens(factories, path, to);
         require(
-            IBEP20(path[path.length - 1]).balanceOf(to).sub(balanceBefore) >= amountOutMin,
+            IERC20(path[path.length - 1]).balanceOf(to) - balanceBefore >= amountOutMin,
             'GoosebumpsRouter: INSUFFICIENT_OUTPUT_AMOUNT'
         );
     }
@@ -498,11 +497,11 @@ contract GoosebumpsRouter is IGoosebumpsRouter {
             path[0], msg.sender, IGoosebumpsRouterPairs(routerPairs).pairFor(factories[0], path[0], path[1]), amountIn
         );
 
-        _swapSupportingFeeOnTransferTokens(factories, path, WETHWrapper);
-        uint256 amountOut = IBEP20(WETH).balanceOf(WETHWrapper);
+        _swapSupportingFeeOnTransferTokens(factories, path, address(this));
+        uint256 amountOut = IERC20(WETH).balanceOf(address(this));
         require(amountOut >= amountOutMin, 'GoosebumpsRouter: INSUFFICIENT_OUTPUT_AMOUNT');
 
-        IGoosebumpsWETHWrapper(WETHWrapper).withdraw(amountOut);
+        IWETH(WETH).withdraw(amountOut);
         TransferHelper.safeTransferETH(to, amountOut);
     }
 
@@ -512,18 +511,6 @@ contract GoosebumpsRouter is IGoosebumpsRouter {
             pair.swap(amount0Out, amount1Out, to);
         }
     }
-
-    
-    /** Router internal modifiers */
-    function setBaseFactory(address _baseFactory) external override onlyGovernor {
-        require(_baseFactory != address(0), "GoosebumpsRouter: FACTORY_NO_ADDRESS");
-        baseFactory = _baseFactory;
-    }
-    function setWETHWrapper(address wethWrapper) external override onlyGovernor {
-        require(wethWrapper != address(0), "GoosebumpsRouter: WETHWrapper_NO_ADDRESS");
-        WETHWrapper = wethWrapper;
-    }
-
 
     /** Aggregator function helpers */
     function setFeeAggregator(address aggregator) external override onlyGovernor {
@@ -538,7 +525,7 @@ contract GoosebumpsRouter is IGoosebumpsRouter {
         TransferHelper.safeTransferFrom(
             path[0], msg.sender, IGoosebumpsRouterPairs(routerPairs).pairFor(baseFactory, path[0], path[1]), amountIn
         );
-        uint256 balanceBefore = IBEP20(path[path.length - 1]).balanceOf(to);
+        uint256 balanceBefore = IERC20(path[path.length - 1]).balanceOf(to);
 
         address[] memory factories = new address[](path.length - 1);
         for(uint256 idx = 0; idx < path.length - 1; idx++) {
@@ -546,7 +533,7 @@ contract GoosebumpsRouter is IGoosebumpsRouter {
         }
 
         _swapSupportingFeeOnTransferTokens(factories, path, to);
-        return IBEP20(path[path.length - 1]).balanceOf(to).sub(balanceBefore);
+        return IERC20(path[path.length - 1]).balanceOf(to) - balanceBefore;
     }
 
     function subtractFee(address from, address token, uint256 amount) 
@@ -557,11 +544,11 @@ contract GoosebumpsRouter is IGoosebumpsRouter {
     }
     function transferFeeWhenNeeded(address from, address token, uint256 fee) internal virtual {
         if (fee > 0) {
-            uint256 balanceBefore = IBEP20(token).balanceOf(feeAggregator);
+            uint256 balanceBefore = IERC20(token).balanceOf(feeAggregator);
             transferTokensOrWETH(token, from, feeAggregator, fee);
             IFeeAggregator(feeAggregator).addTokenFee(
                 token, 
-                IBEP20(token).balanceOf(feeAggregator).sub(balanceBefore)
+                IERC20(token).balanceOf(feeAggregator) - balanceBefore
             );
         }
     }
