@@ -6,16 +6,17 @@ import "./interfaces/IGoosebumpsRouter.sol";
 import "./interfaces/IFeeAggregator.sol";
 import "./interfaces/IWETH.sol";
 import "./interfaces/IERC20.sol";
+import "./libraries/EnumerableSet.sol";
 import "./utils/Ownable.sol";
 
 contract FeeAggregator is IFeeAggregator, Ownable {
-    using EnumerableSetUpgradeable for EnumerableSetUpgradeable.AddressSet;
+    using EnumerableSet for EnumerableSet.AddressSet;
 
     event LogWithdrawalETH(address indexed recipient, uint256 amount);
     event LogWithdrawToken(address indexed token, address indexed recipient, uint256 amount);
 
     //== Variables ==
-    EnumerableSetUpgradeable.AddressSet private _feeTokens; // all the token where a fee is deducted from on swap
+    EnumerableSet.AddressSet private _feeTokens; // all the token where a fee is deducted from on swap
 
     address public WETH;
     /**
