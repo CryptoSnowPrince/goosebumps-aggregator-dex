@@ -84,7 +84,7 @@ contract GoosebumpsRouter is IGoosebumpsRouter {
         address pair = IGoosebumpsRouterPairs(routerPairs).pairFor(baseFactory, tokenA, tokenB);
         TransferHelper.safeTransferFrom(tokenA, msg.sender, pair, amountA);
         TransferHelper.safeTransferFrom(tokenB, msg.sender, pair, amountB);
-        liquidity = IGoosebumpsRouterPair(pair).mint(to);
+        liquidity = IGoosebumpsPair(pair).mint(to);
     }
     function addLiquidityETH(
         address token,
@@ -107,7 +107,7 @@ contract GoosebumpsRouter is IGoosebumpsRouter {
         TransferHelper.safeTransferFrom(token, msg.sender, pair, amountToken);
         IWETH(WETH).deposit{value: amountETH}();
         assert(IWETH(WETH).transfer(pair, amountETH));
-        liquidity = IGoosebumpsRouterPair(pair).mint(to);
+        liquidity = IGoosebumpsPair(pair).mint(to);
         // refund dust eth, if any
         if (msg.value > amountETH) TransferHelper.safeTransferETH(msg.sender, msg.value - amountETH);
     }
@@ -123,8 +123,8 @@ contract GoosebumpsRouter is IGoosebumpsRouter {
         uint256 deadline
     ) public virtual override ensure(deadline) returns (uint256 amountA, uint256 amountB) {
         address pair = IGoosebumpsRouterPairs(routerPairs).pairFor(baseFactory, tokenA, tokenB);
-        IGoosebumpsRouterPair(pair).transferFrom(msg.sender, pair, liquidity); // send liquidity to pair
-        (uint256 amount0, uint256 amount1) = IGoosebumpsRouterPair(pair).burn(to);
+        IGoosebumpsPair(pair).transferFrom(msg.sender, pair, liquidity); // send liquidity to pair
+        (uint256 amount0, uint256 amount1) = IGoosebumpsPair(pair).burn(to);
         (address token0,) = GoosebumpsLibrary.sortTokens(tokenA, tokenB);
         (amountA, amountB) = tokenA == token0 ? (amount0, amount1) : (amount1, amount0);
         require(amountA >= amountAMin, 'GoosebumpsRouter: INSUFFICIENT_A_AMOUNT');
@@ -163,7 +163,7 @@ contract GoosebumpsRouter is IGoosebumpsRouter {
     ) external virtual override returns (uint256 amountA, uint256 amountB) {
         address pair = IGoosebumpsRouterPairs(routerPairs).pairFor(baseFactory, tokenA, tokenB);
         uint256 value = approveMax ? uint256(-1) : liquidity;
-        IGoosebumpsRouterPair(pair).permit(msg.sender, address(this), value, deadline, v, r, s);
+        IGoosebumpsPair(pair).permit(msg.sender, address(this), value, deadline, v, r, s);
         (amountA, amountB) = removeLiquidity(tokenA, tokenB, liquidity, amountAMin, amountBMin, to, deadline);
     }
     function removeLiquidityETHWithPermit(
@@ -177,7 +177,7 @@ contract GoosebumpsRouter is IGoosebumpsRouter {
     ) external virtual override returns (uint256 amountToken, uint256 amountETH) {
         address pair = IGoosebumpsRouterPairs(routerPairs).pairFor(baseFactory, token, WETH);
         uint256 value = approveMax ? uint256(-1) : liquidity;
-        IGoosebumpsRouterPair(pair).permit(msg.sender, address(this), value, deadline, v, r, s);
+        IGoosebumpsPair(pair).permit(msg.sender, address(this), value, deadline, v, r, s);
         (amountToken, amountETH) = removeLiquidityETH(token, liquidity, amountTokenMin, amountETHMin, to, deadline);
     }
 
@@ -214,7 +214,7 @@ contract GoosebumpsRouter is IGoosebumpsRouter {
     ) external virtual override returns (uint256 amountETH) {
         address pair = IGoosebumpsRouterPairs(routerPairs).pairFor(baseFactory, token, WETH);
         uint256 value = approveMax ? uint(-1) : liquidity;
-        IGoosebumpsRouterPair(pair).permit(msg.sender, address(this), value, deadline, v, r, s);
+        IGoosebumpsPair(pair).permit(msg.sender, address(this), value, deadline, v, r, s);
         amountETH = removeLiquidityETHSupportingFeeOnTransferTokens(
             token, liquidity, amountTokenMin, amountETHMin, to, deadline
         );
@@ -250,7 +250,7 @@ contract GoosebumpsRouter is IGoosebumpsRouter {
                 amountOut += feeAmount;
 
             _trySwap(
-                IGoosebumpsRouterPair(IGoosebumpsRouterPairs(routerPairs).pairFor(factories[i], input, output)),
+                IGoosebumpsPair(IGoosebumpsRouterPairs(routerPairs).pairFor(factories[i], input, output)),
                 input == token0 ? uint256(0) : amountOut,
                 input == token0 ? amountOut : uint256(0),
                 to
@@ -395,7 +395,7 @@ contract GoosebumpsRouter is IGoosebumpsRouter {
         for (uint256 i; i < path.length - 1; i++) {
             (address input, address output) = (path[i], path[i + 1]);
             (address token0,) = GoosebumpsLibrary.sortTokens(input, output);
-            IGoosebumpsRouterPair pair = IGoosebumpsRouterPair(IGoosebumpsRouterPairs(routerPairs).pairFor(factories[i], input, output));
+            IGoosebumpsPair pair = IGoosebumpsPair(IGoosebumpsRouterPairs(routerPairs).pairFor(factories[i], input, output));
 
             // fee is only payed on the first or last token
             address to = i < path.length - 2 
@@ -409,7 +409,7 @@ contract GoosebumpsRouter is IGoosebumpsRouter {
             );
         }
     }
-    function _getAmountOut(address factory, IGoosebumpsRouterPair pair, address input, address token0) 
+    function _getAmountOut(address factory, IGoosebumpsPair pair, address input, address token0) 
         internal virtual returns (uint256 amountOutput) 
     {
         (uint256 reserve0, uint256 reserve1,) = pair.getReserves();
@@ -491,7 +491,7 @@ contract GoosebumpsRouter is IGoosebumpsRouter {
         TransferHelper.safeTransferETH(to, amountOut);
     }
 
-    function _trySwap(IGoosebumpsRouterPair pair, uint256 amount0Out, uint256 amount1Out, address to) internal {
+    function _trySwap(IGoosebumpsPair pair, uint256 amount0Out, uint256 amount1Out, address to) internal {
         try pair.swap(amount0Out, amount1Out, to, new bytes(0)) {
         } catch (bytes memory /*lowLevelData*/) {
             pair.swap(amount0Out, amount1Out, to);
