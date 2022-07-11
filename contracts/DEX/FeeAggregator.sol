@@ -14,17 +14,21 @@ contract FeeAggregator is IFeeAggregator, Ownable {
 
     event LogWithdrawalETH(address indexed recipient, uint256 amount);
     event LogWithdrawToken(address indexed token, address indexed recipient, uint256 amount);
+    event LogResetTokensGathered(address indexed token);
+    event LogSetGoosebumpsFee(uint256 fee);
+    event LogAddFeeToken(address indexed token);
+    event LogRemoveFeeToken(address indexed token);
 
     //== Variables ==
     EnumerableSet.AddressSet private _feeTokens; // all the token where a fee is deducted from on swap
 
     address public WETH;
     /**
-     * @notice percentage which get deducted from a swap (1 = 0.1%)
+     * @notice Percentage which get deducted from a swap (1 = 0.1%)
      */
     uint256 public goosebumpsFee;
     /**
-     * @notice gathered feeToken amount
+     * @notice Gathered feeToken amount
      */
     mapping(address => uint256) public tokensGathered;
 
@@ -96,6 +100,8 @@ contract FeeAggregator is IFeeAggregator, Ownable {
         require(!_feeTokens.contains(token), "FeeAggregator: ALREADY_FEE_TOKEN");
         _feeTokens.add(token);
         approveFeeToken(token);
+
+        emit LogAddFeeToken(token);
     }
     /**
      * @notice add fee tokens to deduct a fee for on swap
@@ -114,6 +120,8 @@ contract FeeAggregator is IFeeAggregator, Ownable {
     function removeFeeToken(address token) external override onlyOwner {
         require(_feeTokens.contains(token), "FeeAggregator: NO_FEE_TOKEN");
         _feeTokens.remove(token);
+
+        emit LogRemoveFeeToken(token);
     }
     /**
      * @notice set the percentage which get deducted from a swap (1 = 0.1%)
@@ -122,6 +130,8 @@ contract FeeAggregator is IFeeAggregator, Ownable {
     function setGoosebumpsFee(uint256 fee) external override onlyOwner {
         require(fee >= 0 && fee <= 490, "FeeAggregator: FEE_MIN_0_MAX_49");
         goosebumpsFee = fee;
+
+        emit LogSetGoosebumpsFee(fee);
     }
     
     /**
@@ -146,12 +156,16 @@ contract FeeAggregator is IFeeAggregator, Ownable {
         }
     }
 
+    function resetTokensGathered(address token) external onlyOwner {
+        tokensGathered[token] = 0;
+
+        emit LogResetTokensGathered(token);
+    }
+
     /**
      * @notice  Owner will withdraw ETH and will use to benefit the Empire token holders.
      */
-    function withdrawETH(address payable recipient, uint256 amount)
-        external
-        onlyOwner
+    function withdrawETH(address payable recipient, uint256 amount) external onlyOwner
     {
         require(amount <= (address(this)).balance, "INSUFFICIENT_FUNDS");
         recipient.transfer(amount);
@@ -162,11 +176,7 @@ contract FeeAggregator is IFeeAggregator, Ownable {
      * @notice  Owner will withdraw ERC20 token that have the price and then will use to benefit the Empire token holders.
      #          Should not be withdrawn scam token.
      */
-    function withdrawToken(
-        IERC20 token,
-        address recipient,
-        uint256 amount
-    ) external onlyOwner {
+    function withdrawToken(IERC20 token, address recipient, uint256 amount) external onlyOwner {
         require(amount <= token.balanceOf(address(this)), "INSUFFICIENT_FUNDS");
         require(token.transfer(recipient, amount), "Transfer Fail");
 
