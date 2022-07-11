@@ -221,6 +221,7 @@ contract GoosebumpsRouter is IGoosebumpsRouter {
     }
 
     // **** SWAP ****
+    // requires the initial amount to have already been sent to the first pair
     function _swap(
         address[] memory factories, 
         uint256[] memory amounts, 
@@ -229,14 +230,6 @@ contract GoosebumpsRouter is IGoosebumpsRouter {
         uint256 feeAmount, 
         address feeToken
     ) internal {
-        // send initial amount
-        transferTokensOrWETH(
-            path[0],
-            msg.sender,
-            IGoosebumpsRouterPairs(routerPairs).pairFor(factories[0], path[0],
-            path[1]),
-            amounts[0]
-        );
         if (path[0] == feeToken) transferFeeWhenNeeded(msg.sender, feeToken, feeAmount);
 
         for (uint256 i; i < path.length - 1; i++) {
@@ -246,7 +239,7 @@ contract GoosebumpsRouter is IGoosebumpsRouter {
             address to = i < path.length - 2 
                 ? IGoosebumpsRouterPairs(routerPairs).pairFor(factories[i + 1], output, path[i + 2])
                 : _to;
-            if (to == WETHWrapper && output == path[path.length - 1] && output == feeToken)`
+            if (output == path[path.length - 1] && output == feeToken)
                 amountOut += feeAmount;
 
             _trySwap(
@@ -256,8 +249,8 @@ contract GoosebumpsRouter is IGoosebumpsRouter {
                 to
             );
 
-            if (to == WETHWrapper && output == path[path.length - 1] && output == feeToken)
-                transferFeeWhenNeeded(WETHWrapper, feeToken, feeAmount);
+            if (output == path[path.length - 1] && output == feeToken)
+                transferFeeWhenNeeded(to, feeToken, feeAmount);
         }
     }
     function swapExactTokensForTokens(
@@ -272,6 +265,13 @@ contract GoosebumpsRouter is IGoosebumpsRouter {
         address feeToken;
         (amounts, feeAmount, feeToken) = IGoosebumpsRouterPairs(routerPairs).getAmountsOut(factories, amountIn, path);
         require(amounts[amounts.length - 1] >= amountOutMin, 'GoosebumpsRouter: INSUFFICIENT_OUTPUT_AMOUNT');
+
+        TransferHelper.safeTransferFrom(
+            path[0],
+            msg.sender,
+            IGoosebumpsRouterPairs(routerPairs).pairFor(factories[0], path[0], path[1]),
+            amounts[0]
+        );
 
         _swap(factories, amounts, path, to, feeAmount, feeToken);
     }
@@ -290,6 +290,13 @@ contract GoosebumpsRouter is IGoosebumpsRouter {
         uint256 totalAmount0 = amounts[0];
         if (path[0] == feeToken) totalAmount0 += feeAmount;
         require(totalAmount0 <= amountInMax, 'GoosebumpsRouter: EXCESSIVE_INPUT_AMOUNT');
+
+        TransferHelper.safeTransferFrom(
+            path[0],
+            msg.sender,
+            IGoosebumpsRouterPairs(routerPairs).pairFor(factories[0], path[0], path[1]),
+            amounts[0]
+        );
 
         _swap(factories, amounts, path, to, feeAmount, feeToken);
     }
@@ -310,7 +317,8 @@ contract GoosebumpsRouter is IGoosebumpsRouter {
 
         uint256 totalAmount0 = amounts[0];
         if (path[0] == feeToken) totalAmount0 += feeAmount;
-        IGoosebumpsWETHWrapper(WETHWrapper).deposit{value: totalAmount0}();
+        IWETH(WETH).deposit{value: totalAmount0}();
+        assert(IWETH(WETH).transfer(IGoosebumpsRouterPairs(routerPairs).pairFor(factories[0], path[0], path[1]), amounts[0]));
 
         _swap(factories, amounts, path, to, feeAmount, feeToken);
     }
@@ -331,7 +339,17 @@ contract GoosebumpsRouter is IGoosebumpsRouter {
         if (path[0] == feeToken) totalAmount0 += feeAmount;
         require(totalAmount0 <= amountInMax, 'GoosebumpsRouter: EXCESSIVE_INPUT_AMOUNT');
 
-        amounts = _swapTokensForETH(factories, amounts, path, to, feeAmount, feeToken);
+        TransferHelper.safeTransferFrom(
+            path[0],
+            msg.sender,
+            IGoosebumpsRouterPairs(routerPairs).pairFor(factories[0], path[0], path[1]),
+            amounts[0]
+        );
+
+        _swap(factories, amounts, path, address(this), feeAmount, feeToken);
+
+        IWETH(WETH).withdraw(amounts[amounts.length - 1]);
+        TransferHelper.safeTransferETH(to, amounts[amounts.length - 1]);
     }
     function swapExactTokensForETH(
         address[] calldata factories,
@@ -347,21 +365,17 @@ contract GoosebumpsRouter is IGoosebumpsRouter {
         (amounts, feeAmount, feeToken) = IGoosebumpsRouterPairs(routerPairs).getAmountsOut(factories, amountIn, path);
         require(amounts[amounts.length - 1] >= amountOutMin, 'GoosebumpsRouter: INSUFFICIENT_OUTPUT_AMOUNT');
 
-        amounts = _swapTokensForETH(factories, amounts, path, to, feeAmount, feeToken);
-    }
-    function _swapTokensForETH(
-        address[] calldata factories,
-        uint256[] memory amounts,
-        address[] calldata path, 
-        address to,
-        uint256 feeAmount,
-        address feeToken
-    ) internal returns (uint256[] memory) {
-        _swap(factories, amounts, path, WETHWrapper, feeAmount, feeToken);
+        TransferHelper.safeTransferFrom(
+            path[0],
+            msg.sender,
+            IGoosebumpsRouterPairs(routerPairs).pairFor(factories[0], path[0], path[1]),
+            amounts[0]
+        );
 
-        IGoosebumpsWETHWrapper(WETHWrapper).withdraw(amounts[amounts.length - 1]);
+        _swap(factories, amounts, path, address(this), feeAmount, feeToken);
+
+        IWETH(WETH).withdraw(amounts[amounts.length - 1]);
         TransferHelper.safeTransferETH(to, amounts[amounts.length - 1]);
-        return amounts;
     }
     function swapETHForExactTokens(
         address[] calldata factories,
@@ -379,12 +393,13 @@ contract GoosebumpsRouter is IGoosebumpsRouter {
         uint256 totalAmount0 = amounts[0];
         if (path[0] == feeToken) totalAmount0 += feeAmount;
         require(totalAmount0 <= msg.value, 'GoosebumpsRouter: EXCESSIVE_INPUT_AMOUNT');
-        IGoosebumpsWETHWrapper(WETHWrapper).deposit{value: totalAmount0}();
+        IWETH(WETH).deposit{value: totalAmount0}();
+        assert(IWETH(WETH).transfer(IGoosebumpsRouterPairs(routerPairs).pairFor(factories[0], path[0], path[1]), amounts[0]));
 
         _swap(factories, amounts, path, to, feeAmount, feeToken);
 
         // refund dust eth, if any
-        if (msg.value > amounts[0]) TransferHelper.safeTransferETH(msg.sender, msg.value - totalAmount0);
+        if (msg.value > totalAmount0) TransferHelper.safeTransferETH(msg.sender, msg.value - totalAmount0);
     }
 
     // **** SWAP (supporting fee-on-transfer tokens) ****
@@ -554,7 +569,7 @@ contract GoosebumpsRouter is IGoosebumpsRouter {
         if (token != WETH) {
             TransferHelper.safeTransferFrom(token, from, to, amount);
         } else {
-            assert(IGoosebumpsWETHWrapper(WETHWrapper).transfer(to, amount));
+            assert(IWETH(WETH).transfer(to, amount));
         }
     }
 }
