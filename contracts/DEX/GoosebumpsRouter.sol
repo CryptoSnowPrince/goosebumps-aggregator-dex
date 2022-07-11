@@ -105,8 +105,8 @@ contract GoosebumpsRouter is IGoosebumpsRouter {
         );
         address pair = IGoosebumpsRouterPairs(routerPairs).pairFor(baseFactory, token, WETH);
         TransferHelper.safeTransferFrom(token, msg.sender, pair, amountToken);
-        IGoosebumpsWETHWrapper(WETHWrapper).deposit{value: amountETH}();
-        assert(IGoosebumpsWETHWrapper(WETHWrapper).transfer(pair, amountETH));
+        IWETH(WETH).deposit{value: amountETH}();
+        assert(IWETH(WETH).transfer(pair, amountETH));
         liquidity = IGoosebumpsRouterPair(pair).mint(to);
         // refund dust eth, if any
         if (msg.value > amountETH) TransferHelper.safeTransferETH(msg.sender, msg.value - amountETH);
@@ -148,8 +148,7 @@ contract GoosebumpsRouter is IGoosebumpsRouter {
             deadline
         );
         TransferHelper.safeTransfer(token, to, amountToken);
-        assert(IWETH(WETH).transfer(WETHWrapper, amountETH));
-        IGoosebumpsWETHWrapper(WETHWrapper).withdraw(amountETH);
+        IWETH(WETH).withdraw(amountETH)
         TransferHelper.safeTransferETH(to, amountETH);
     }
     function removeLiquidityWithPermit(
@@ -162,23 +161,10 @@ contract GoosebumpsRouter is IGoosebumpsRouter {
         uint256 deadline,
         bool approveMax, uint8 v, bytes32 r, bytes32 s
     ) external virtual override returns (uint256 amountA, uint256 amountB) {
-        _permit(tokenA, tokenB, liquidity, deadline, approveMax, v, r ,s);
+        address pair = IGoosebumpsRouterPairs(routerPairs).pairFor(baseFactory, tokenA, tokenB);
+        uint256 value = approveMax ? uint256(-1) : liquidity;
+        IGoosebumpsRouterPair(pair).permit(msg.sender, address(this), value, deadline, v, r, s);
         (amountA, amountB) = removeLiquidity(tokenA, tokenB, liquidity, amountAMin, amountBMin, to, deadline);
-    }
-    function _permit(
-        address tokenA,
-        address tokenB,
-        uint256 liquidity,
-        uint256 deadline,
-        bool approveMax, uint8 v, bytes32 r, bytes32 s
-    ) internal {
-        IGoosebumpsRouterPair(IGoosebumpsRouterPairs(routerPairs).pairFor(baseFactory, tokenA, tokenB)).permit(
-            msg.sender, 
-            address(this), 
-            approveMax ? uint(-1) : liquidity,
-            deadline,
-            v, r, s
-        );
     }
     function removeLiquidityETHWithPermit(
         address token,
@@ -189,13 +175,9 @@ contract GoosebumpsRouter is IGoosebumpsRouter {
         uint256 deadline,
         bool approveMax, uint8 v, bytes32 r, bytes32 s
     ) external virtual override returns (uint256 amountToken, uint256 amountETH) {
-        IGoosebumpsRouterPair(IGoosebumpsRouterPairs(routerPairs).pairFor(baseFactory, token, WETH)).permit(
-            msg.sender,
-            address(this),
-            approveMax ? uint(-1) : liquidity,
-            deadline,
-            v, r, s
-        );
+        address pair = IGoosebumpsRouterPairs(routerPairs).pairFor(baseFactory, token, WETH);
+        uint256 value = approveMax ? uint256(-1) : liquidity;
+        IGoosebumpsRouterPair(pair).permit(msg.sender, address(this), value, deadline, v, r, s);
         (amountToken, amountETH) = removeLiquidityETH(token, liquidity, amountTokenMin, amountETHMin, to, deadline);
     }
 
@@ -218,8 +200,7 @@ contract GoosebumpsRouter is IGoosebumpsRouter {
             deadline
         );
         TransferHelper.safeTransfer(token, to, IBEP20(token).balanceOf(address(this)));
-        assert(IWETH(WETH).transfer(WETHWrapper, amountETH));
-        IGoosebumpsWETHWrapper(WETHWrapper).withdraw(amountETH);
+        IWETH(WETH).withdraw(amountETH);
         TransferHelper.safeTransferETH(to, amountETH);
     }
     function removeLiquidityETHWithPermitSupportingFeeOnTransferTokens(
