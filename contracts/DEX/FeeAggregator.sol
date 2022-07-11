@@ -2,20 +2,17 @@
 
 pragma solidity 0.8.7;
 
-import "./interfaces/IDPexRouter.sol";
+import "./interfaces/IGoosebumpsRouter.sol";
 import "./interfaces/IFeeAggregator.sol";
 import "./interfaces/IWETH.sol";
+import "./interfaces/IERC20.sol";
 import "./utils/Ownable.sol";
 
 contract FeeAggregator is IFeeAggregator, Ownable {
     using EnumerableSetUpgradeable for EnumerableSetUpgradeable.AddressSet;
 
     event LogWithdrawalETH(address indexed recipient, uint256 amount);
-    event LogWithdrawToken(
-        address indexed token,
-        address indexed recipient,
-        uint256 amount
-    );
+    event LogWithdrawToken(address indexed token, address indexed recipient, uint256 amount);
 
     //== Variables ==
     EnumerableSetUpgradeable.AddressSet private _feeTokens; // all the token where a fee is deducted from on swap
@@ -26,15 +23,15 @@ contract FeeAggregator is IFeeAggregator, Ownable {
      */
     uint256 public goosebumpsFee;
     /**
-     * @notice token fees gathered in the current period
+     * @notice gathered feeToken amount
      */
     mapping(address => uint256) public tokensGathered;
 
     uint256 private constant MAX_INT = 2**256 - 1;
 
-    constructor(address _baseToken) {
+    constructor(address _WETH) {
         goosebumpsFee = 1;
-        WETH = _baseToken;
+        WETH = _WETH;
     }
 
     receive() external payable {
@@ -74,7 +71,7 @@ contract FeeAggregator is IFeeAggregator, Ownable {
      * @param amount amount to calculate the fee for
      */
     function calculateFee(uint256 amount) public override view returns (uint256 fee, uint256 amountLeft) {
-        amountLeft = ((amount * 1000) - (amount * goosebumpsFee)) / 1000;
+        amountLeft = amount * (1000 - goosebumpsFee) / 1000;
         fee = amount - amountLeft;
     }
     /**
@@ -108,22 +105,7 @@ contract FeeAggregator is IFeeAggregator, Ownable {
             addFeeToken(tokens[idx]);
         }
     }
-    /**
-     * @notice approve a single fee token on the router
-     * @param token fee token to approve
-     */
-    function approveFeeToken(address token) public override onlyOwner {
-        IERC20Upgradeable(token).approve(router(), MAX_INT);
-    }
-    /**
-     * @notice approve all fee tokens on the router
-     */
-    function approveFeeTokens() external override onlyOwner {
-        for(uint256 idx = 0; idx < _feeTokens.length(); idx++) {
-            address token = _feeTokens.at(idx);
-            approveFeeToken(token);
-        }
-    }
+    
     /**
      * @notice remove a token to deduct a fee for on swap
      * @param token fee token to add
@@ -190,74 +172,35 @@ contract FeeAggregator is IFeeAggregator, Ownable {
         emit LogWithdrawToken(address(token), recipient, amount);
     }
 
-    /**
-     * @notice sells all fees for PSI and reflects them over the PSI holders
-     */
-    function reflectFees(uint256 deadline) external override onlyOwner ensure(deadline) {
-        uint256 psiBalanceBefore = IERC20Upgradeable(psi).balanceOf(address(this));
-        _sellFeesToPSI();
-        uint256 psiFeeBalance = IERC20Upgradeable(psi).balanceOf(address(this)) - psiBalanceBefore;
-        if (tokensGathered[psi] > 0) {
-            psiFeeBalance += tokensGathered[psi];
-            tokensGathered[psi] = 0;
-        }
+    function swapExactTokensForTokens(
+        IGoosebumpsRouter router;
+        address[] calldata factories,
+        uint256 amountIn,
+        uint256 amountOutMin,
+        address[] calldata path,
+        address to,
+        uint256 deadline
+    ) external onlyOwner returns (uint256[] memory amounts) {
+        require(IERC20(path[0]).balanceOf(address(this)) >= amountIn, "FeeAggregator: NO_FEE_TOKEN_BALANCE");
+        require(IERC20(path[0]).approve(address(router), amountIn), "FeeAggregator: APPROVE_FAIL");
+        require(to != address(this), "FeeAggregator: TO_ADDRESS_SHOULD_NOT_BE_FEEAGGREGATOR");
 
-        IPSI(psi).reflect(psiFeeBalance);
+        amounts = router.swapExactTokensForTokensSupportingFeeOnTransferTokens(factories, amountIn, amountOutMin, path, to, deadline);
     }
-    /**
-     * @notice sells a single fee for PSI and reflects them over the PSI holders
-     */
-    function reflectFee(address token, uint256 deadline) external override onlyOwner ensure(deadline) {
-        require(_feeTokens.contains(token), "FeeAggregator: NO_FEE_TOKEN");
-        uint256 psiBalanceBefore = IERC20Upgradeable(psi).balanceOf(address(this));
-        uint256 psiFeeBalance;
-        if (token == psi) {
-            psiFeeBalance = tokensGathered[psi];
-            require(psiFeeBalance > 0, "FeeAggregator: NO_FEE_TOKEN_BALANCE");
-        } else {
-            _sellFeeToPSI(token);
-            psiFeeBalance = IERC20Upgradeable(psi).balanceOf(address(this)) - psiBalanceBefore;
-        }
 
-        IPSI(psi).reflect(psiFeeBalance);
-    }
-    function _sellFeesToPSI() internal {
-        for(uint256 idx = 0; idx < _feeTokens.length(); idx++) {
-            address token = _feeTokens.at(idx);
-            uint256 tokenBalance = IERC20Upgradeable(token).balanceOf(address(this));
-            if (token != WETH && token != psi && tokenBalance > 0) {
-                tokensGathered[token] = 0;
-                address[] memory path = new address[](2);
-                path[0] = token;
-                path[1] = WETH;
-                IDPexRouter(router()).swapAggregatorToken(tokenBalance, path, address(this));
-            }
-        }
+    function swapExactTokensForETH(
+        IGoosebumpsRouter router;
+        address[] calldata factories,
+        uint256 amountIn,
+        uint256 amountOutMin,
+        address[] calldata path,
+        address to,
+        uint256 deadline
+    ) external onlyOwner returns (uint256[] memory amounts) {
+        require(IERC20(path[0]).balanceOf(address(this)) >= amountIn, "FeeAggregator: NO_FEE_TOKEN_BALANCE");
+        require(IERC20(path[0]).approve(address(router), amountIn), "FeeAggregator: APPROVE_FAIL");
+        require(to != address(this), "FeeAggregator: TO_ADDRESS_SHOULD_NOT_BE_FEEAGGREGATOR");
 
-        _sellBaseTokenToPSI();
-    }
-    function _sellFeeToPSI(address token) internal {
-        uint256 tokenBalance = IERC20Upgradeable(token).balanceOf(address(this));
-        require(tokenBalance > 0, "FeeAggregator: NO_FEE_TOKEN_BALANCE");
-        if (token != WETH && token != psi && tokenBalance > 0) {
-            tokensGathered[token] = 0;
-            address[] memory path = new address[](3);
-            path[0] = token;
-            path[1] = WETH;
-            path[2] = psi;
-            IDPexRouter(router()).swapAggregatorToken(tokenBalance, path, address(this));
-        } else if(token == WETH) {
-            _sellBaseTokenToPSI();
-        }
-    }
-    function _sellBaseTokenToPSI() internal {
-        uint256 balance = IERC20Upgradeable(WETH).balanceOf(address(this));
-        if (balance <= 0) return;
-
-        tokensGathered[WETH] = 0;
-        address[] memory path = new address[](2);
-        path[0] = WETH;
-        path[1] = psi;
-        IDPexRouter(router()).swapAggregatorToken(balance, path, address(this));
+        amounts = router.swapExactTokensForETHSupportingFeeOnTransferTokens(factories, amountIn, amountOutMin, path, to, deadline);
     }
 }

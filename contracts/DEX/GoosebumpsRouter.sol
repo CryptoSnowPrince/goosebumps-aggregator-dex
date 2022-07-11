@@ -514,30 +514,11 @@ contract GoosebumpsRouter is IGoosebumpsRouter {
         }
     }
 
-    function swapAggregatorToken(
-        uint256 amountIn,
-        address[] calldata path,
-        address to
-    ) external virtual override onlyAggregator returns (uint256) {
-        TransferHelper.safeTransferFrom(
-            path[0], msg.sender, IGoosebumpsRouterPairs(routerPairs).pairFor(baseFactory, path[0], path[1]), amountIn
-        );
-        uint256 balanceBefore = IERC20(path[path.length - 1]).balanceOf(to);
-
-        address[] memory factories = new address[](path.length - 1);
-        for(uint256 idx = 0; idx < path.length - 1; idx++) {
-            factories[idx] = baseFactory;
-        }
-
-        _swapSupportingFeeOnTransferTokens(factories, path, to);
-        return IERC20(path[path.length - 1]).balanceOf(to) - balanceBefore;
-    }
-
     function subtractFee(address from, address token, uint256 amount) 
         internal virtual returns(uint256 amountLeft, uint256 fee) 
     {
         (fee, amountLeft) = IFeeAggregator(feeAggregator).calculateFee(token, amount);
-        if (fee > 0) transferFeeWhenNeeded(from, token, fee);
+        transferFeeWhenNeeded(from, token, fee);
     }
     function transferFeeWhenNeeded(address from, address token, uint256 fee) internal virtual {
         if (fee > 0) {
