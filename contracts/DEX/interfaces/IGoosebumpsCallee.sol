@@ -1,6 +1,6 @@
-// SPDX-License-Identifier: GPL-3.0
+// SPDX-License-Identifier: MIT
 
-pragma solidity >=0.5.0;
+pragma solidity 0.8.7;
 
 interface IGoosebumpsCallee {
     function GoosebumpsCall(address sender, uint amount0, uint amount1, bytes calldata data) external;
