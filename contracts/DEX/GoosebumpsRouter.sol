@@ -213,7 +213,7 @@ contract GoosebumpsRouter is IGoosebumpsRouter {
         bool approveMax, uint8 v, bytes32 r, bytes32 s
     ) external virtual override returns (uint256 amountETH) {
         address pair = IGoosebumpsRouterPairs(routerPairs).pairFor(baseFactory, token, WETH);
-        uint256 value = approveMax ? uint(-1) : liquidity;
+        uint256 value = approveMax ? uint256(-1) : liquidity;
         IGoosebumpsPair(pair).permit(msg.sender, address(this), value, deadline, v, r, s);
         amountETH = removeLiquidityETHSupportingFeeOnTransferTokens(
             token, liquidity, amountTokenMin, amountETHMin, to, deadline
@@ -223,7 +223,7 @@ contract GoosebumpsRouter is IGoosebumpsRouter {
     // **** SWAP ****
     function _swap(
         address[] memory factories, 
-        uint[] memory amounts, 
+        uint256[] memory amounts, 
         address[] memory path, 
         address _to, 
         uint256 feeAmount, 
@@ -267,7 +267,7 @@ contract GoosebumpsRouter is IGoosebumpsRouter {
         address[] calldata path,
         address to,
         uint256 deadline
-    ) external virtual override ensure(deadline) returns (uint[] memory amounts) {
+    ) external virtual override ensure(deadline) returns (uint256[] memory amounts) {
         uint256 feeAmount;
         address feeToken;
         (amounts, feeAmount, feeToken) = IGoosebumpsRouterPairs(routerPairs).getAmountsOut(factories, amountIn, path);
@@ -282,7 +282,7 @@ contract GoosebumpsRouter is IGoosebumpsRouter {
         address[] calldata path,
         address to,
         uint256 deadline
-    ) external virtual override ensure(deadline) returns (uint[] memory amounts) {
+    ) external virtual override ensure(deadline) returns (uint256[] memory amounts) {
         uint256 feeAmount;
         address feeToken;
         (amounts, feeAmount, feeToken) = IGoosebumpsRouterPairs(routerPairs).getAmountsIn(factories, amountOut, path);
@@ -299,7 +299,7 @@ contract GoosebumpsRouter is IGoosebumpsRouter {
         address[] calldata path,
         address to,
         uint256 deadline
-    ) external virtual override payable ensure(deadline) returns (uint[] memory amounts) {
+    ) external virtual override payable ensure(deadline) returns (uint256[] memory amounts) {
         require(path[0] == WETH, 'GoosebumpsRouter: INVALID_PATH');
 
         uint256 feeAmount;
@@ -321,7 +321,7 @@ contract GoosebumpsRouter is IGoosebumpsRouter {
         address[] calldata path,
         address to,
         uint256 deadline
-    ) external virtual override ensure(deadline) returns (uint[] memory amounts) {
+    ) external virtual override ensure(deadline) returns (uint256[] memory amounts) {
         require(path[path.length - 1] == WETH, 'GoosebumpsRouter: INVALID_PATH');
         uint256 feeAmount;
         address feeToken;
@@ -340,7 +340,7 @@ contract GoosebumpsRouter is IGoosebumpsRouter {
         address[] calldata path,
         address to,
         uint256 deadline
-    ) external virtual override ensure(deadline) returns (uint[] memory amounts) {
+    ) external virtual override ensure(deadline) returns (uint256[] memory amounts) {
         require(path[path.length - 1] == WETH, 'GoosebumpsRouter: INVALID_PATH');
         uint256 feeAmount;
         address feeToken;
@@ -351,12 +351,12 @@ contract GoosebumpsRouter is IGoosebumpsRouter {
     }
     function _swapTokensForETH(
         address[] calldata factories,
-        uint[] memory amounts,
+        uint256[] memory amounts,
         address[] calldata path, 
         address to,
         uint256 feeAmount,
         address feeToken
-    ) internal returns (uint[] memory) {
+    ) internal returns (uint256[] memory) {
         _swap(factories, amounts, path, WETHWrapper, feeAmount, feeToken);
 
         IGoosebumpsWETHWrapper(WETHWrapper).withdraw(amounts[amounts.length - 1]);
@@ -369,7 +369,7 @@ contract GoosebumpsRouter is IGoosebumpsRouter {
         address[] calldata path,
         address to,
         uint256 deadline
-    ) external virtual override payable ensure(deadline) returns (uint[] memory amounts) {
+    ) external virtual override payable ensure(deadline) returns (uint256[] memory amounts) {
         require(path[0] == WETH, 'GoosebumpsRouter: INVALID_PATH');
 
         uint256 feeAmount;
@@ -403,8 +403,8 @@ contract GoosebumpsRouter is IGoosebumpsRouter {
                 : _to;
             _trySwap(
                 pair,
-                input == token0 ? uint(0) : _getAmountOut(factories[i], pair, input, token0), 
-                input == token0 ? _getAmountOut(factories[i], pair, input, token0) : uint(0),
+                input == token0 ? uint256(0) : _getAmountOut(factories[i], pair, input, token0), 
+                input == token0 ? _getAmountOut(factories[i], pair, input, token0) : uint256(0),
                 to
             );
         }
