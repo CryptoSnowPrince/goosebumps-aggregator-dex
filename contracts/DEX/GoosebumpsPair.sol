@@ -10,7 +10,6 @@ import './interfaces/IGoosebumpsFactory.sol';
 import './interfaces/IGoosebumpsCallee.sol';
 
 contract GoosebumpsPair is GoosebumpsERC20 {
-    using SafeMath  for uint256;
     using UQ112x112 for uint224;
 
     uint256 public constant MINIMUM_LIQUIDITY = 10**3;
@@ -155,7 +154,7 @@ contract GoosebumpsPair is GoosebumpsERC20 {
         if (feeOn) kLast = uint256(reserve0) * reserve1; // reserve0 and reserve1 are up-to-date
         emit Burn(msg.sender, amount0, amount1, to);
     }
-    
+
     // this low-level function should be called from a contract which performs important safety checks
     function swap(uint256 amount0Out, uint256 amount1Out, address to, bytes calldata data) external lock {
         require(amount0Out > 0 || amount1Out > 0, 'GoosebumpsPair: INSUFFICIENT_OUTPUT_AMOUNT');
