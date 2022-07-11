@@ -12,8 +12,8 @@ import './interfaces/IWETH.sol';
 contract GoosebumpsRouter is IGoosebumpsRouter {
     address public immutable override WETH;
     address public immutable override baseFactory;
-    address public override routerPairs;
-    address public override feeAggregator;
+    address public immutable override routerPairs;
+    address public immutable override feeAggregator;
 
     modifier ensure(uint256 deadline) {
         require(deadline >= block.timestamp, 'GoosebumpsRouter: EXPIRED');
@@ -30,9 +30,9 @@ contract GoosebumpsRouter is IGoosebumpsRouter {
         address _WETH,
         address _aggregator,
     ) {
+        WETH = _WETH;
         baseFactory = _baseFactory;
         routerPairs = _routerPairs;
-        WETH = _WETH;
         feeAggregator = _aggregator;
     }
 
@@ -512,11 +512,6 @@ contract GoosebumpsRouter is IGoosebumpsRouter {
         }
     }
 
-    /** Aggregator function helpers */
-    function setFeeAggregator(address aggregator) external override onlyGovernor {
-        require(aggregator != address(0), "GoosebumpsRouter: FEE_AGGREGATOR_NO_ADDRESS");
-        feeAggregator = aggregator;
-    }
     function swapAggregatorToken(
         uint256 amountIn,
         address[] calldata path,
@@ -545,18 +540,11 @@ contract GoosebumpsRouter is IGoosebumpsRouter {
     function transferFeeWhenNeeded(address from, address token, uint256 fee) internal virtual {
         if (fee > 0) {
             uint256 balanceBefore = IERC20(token).balanceOf(feeAggregator);
-            transferTokensOrWETH(token, from, feeAggregator, fee);
+            TransferHelper.safeTransferFrom(token, from, feeAggregator, fee);
             IFeeAggregator(feeAggregator).addTokenFee(
                 token, 
                 IERC20(token).balanceOf(feeAggregator) - balanceBefore
             );
-        }
-    }
-    function transferTokensOrWETH(address token, address from, address to, uint256 amount) internal virtual {
-        if (token != WETH) {
-            TransferHelper.safeTransferFrom(token, from, to, amount);
-        } else {
-            assert(IWETH(WETH).transfer(to, amount));
         }
     }
 }
