@@ -150,10 +150,4 @@ interface IGoosebumpsRouter {
         address to,
         uint256 deadline
     ) external;
-
-    function swapAggregatorToken(
-        uint256 amountIn,
-        address[] calldata path,
-        address to
-    ) external returns (uint256);
 }

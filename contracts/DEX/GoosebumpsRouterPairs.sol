@@ -7,7 +7,7 @@ import './libraries/OrderedEnumerableMap.sol';
 import './interfaces/IGoosebumpsRouterPairs.sol';
 import './utils/Ownable.sol';
 
-contract GoosebumpsRouterPairs is IGoosebumpsRouterPairs {
+contract GoosebumpsRouterPairs is IGoosebumpsRouterPairs, Ownable {
     using OrderedEnumerableMap for OrderedEnumerableMap.AddressToBytes32Map;
 
     address public override feeAggregator;
@@ -20,7 +20,7 @@ contract GoosebumpsRouterPairs is IGoosebumpsRouterPairs {
         _;
     }
 
-    function constructor(address _aggregator) {
+    constructor(address _aggregator) {
         feeAggregator = _aggregator;
     }
 
@@ -100,15 +100,15 @@ contract GoosebumpsRouterPairs is IGoosebumpsRouterPairs {
     }
     
     /** Router internal modifiers */
-    function setFeeAggregator(address aggregator) external override onlyGovernor {
+    function setFeeAggregator(address aggregator) external override onlyOwner {
         require(aggregator != address(0), "GoosebumpsRouterPairs: FEE_AGGREGATOR_NO_ADDRESS");
         feeAggregator = aggregator;
     }
-    function setFactory(address _factory, bytes32 initHash) external override onlyGovernor returns (bool) {
+    function setFactory(address _factory, bytes32 initHash) external override onlyOwner returns (bool) {
         require(_factory != address(0), "GoosebumpsRouterPairs: FACTORY_NO_ADDRESS");
         return factories.set(_factory, initHash);
     }
-    function removeFactory(address _factory) external override onlyGovernor returns (bool) {
+    function removeFactory(address _factory) external override onlyOwner returns (bool) {
         require(_factory != address(0), "GoosebumpsRouterPairs: FACTORY_NO_ADDRESS");
         return factories.remove(_factory);
     }
@@ -124,7 +124,7 @@ contract GoosebumpsRouterPairs is IGoosebumpsRouterPairs {
         }
         return _allFactories;
     }
-    function setLPFee(address _factory, uint256 fee) external override onlyGovernor {
+    function setLPFee(address _factory, uint256 fee) external override onlyOwner {
         require(_factory != address(0), "GoosebumpsRouterPairs: FACTORY_NO_ADDRESS");
         lpFees[_factory] = fee;
     }

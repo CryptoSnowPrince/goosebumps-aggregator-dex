@@ -99,7 +99,6 @@ contract FeeAggregator is IFeeAggregator, Ownable {
     function addFeeToken(address token) public override onlyOwner {
         require(!_feeTokens.contains(token), "FeeAggregator: ALREADY_FEE_TOKEN");
         _feeTokens.add(token);
-        approveFeeToken(token);
 
         emit LogAddFeeToken(token);
     }
@@ -184,14 +183,14 @@ contract FeeAggregator is IFeeAggregator, Ownable {
     }
 
     function swapExactTokensForTokens(
-        IGoosebumpsRouter router;
+        IGoosebumpsRouter router,
         address[] calldata factories,
         uint256 amountIn,
         uint256 amountOutMin,
         address[] calldata path,
         address to,
         uint256 deadline
-    ) external onlyOwner returns (uint256[] memory amounts) {
+    ) external onlyOwner {
         require(IERC20(path[0]).balanceOf(address(this)) >= amountIn, "FeeAggregator: NO_FEE_TOKEN_BALANCE");
         require(IERC20(path[0]).approve(address(router), amountIn), "FeeAggregator: APPROVE_FAIL");
         require(to != address(this), "FeeAggregator: TO_ADDRESS_SHOULD_NOT_BE_FEEAGGREGATOR");
@@ -200,14 +199,14 @@ contract FeeAggregator is IFeeAggregator, Ownable {
     }
 
     function swapExactTokensForETH(
-        IGoosebumpsRouter router;
+        IGoosebumpsRouter router,
         address[] calldata factories,
         uint256 amountIn,
         uint256 amountOutMin,
         address[] calldata path,
         address to,
         uint256 deadline
-    ) external onlyOwner returns (uint256[] memory amounts) {
+    ) external onlyOwner {
         require(IERC20(path[0]).balanceOf(address(this)) >= amountIn, "FeeAggregator: NO_FEE_TOKEN_BALANCE");
         require(IERC20(path[0]).approve(address(router), amountIn), "FeeAggregator: APPROVE_FAIL");
         require(to != address(this), "FeeAggregator: TO_ADDRESS_SHOULD_NOT_BE_FEEAGGREGATOR");

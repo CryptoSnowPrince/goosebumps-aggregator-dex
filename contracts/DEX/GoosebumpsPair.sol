@@ -71,7 +71,7 @@ contract GoosebumpsPair is GoosebumpsERC20 {
 
     // update reserves and, on the first call per block, price accumulators
     function _update(uint256 balance0, uint256 balance1, uint112 _reserve0, uint112 _reserve1) private {
-        require(balance0 <= uint112(-1) && balance1 <= uint112(-1), 'GoosebumpsPair: OVERFLOW');
+        require(balance0 <= type(uint112).max && balance1 <= type(uint112).max, 'GoosebumpsPair: OVERFLOW');
         uint32 blockTimestamp = uint32(block.timestamp % 2**32);
         uint32 timeElapsed = blockTimestamp - blockTimestampLast; // overflow is desired
         if (timeElapsed > 0 && _reserve0 != 0 && _reserve1 != 0) {

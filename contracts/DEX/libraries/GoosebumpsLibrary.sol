@@ -25,12 +25,12 @@ library GoosebumpsLibrary {
         internal pure returns (address pair) 
     {
         (address token0, address token1) = sortTokens(tokenA, tokenB);
-        pair = address(uint256(keccak256(abi.encodePacked(
+        pair = address(uint160(uint256(keccak256(abi.encodePacked(
                 hex'ff',
                 factory,
                 keccak256(abi.encodePacked(token0, token1)),
                 initPairHash
-            ))));
+            )))));
     }
 
     // fetches and sorts the reserves for a pair

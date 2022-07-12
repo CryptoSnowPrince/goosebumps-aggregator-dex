@@ -10,13 +10,8 @@ interface IFeeAggregator {
 
     function addFeeToken(address token) external;
     function addFeeTokens(address[] calldata tokens) external;
-    function approveFeeToken(address token) external;
-    function approveFeeTokens() external;
     function removeFeeToken(address token) external;
-    function setDPexFee(uint256 fee) external;
-    function setPSIAddress(address _psi) external;
+    function setGoosebumpsFee(uint256 fee) external;
     function addTokenFee(address token, uint256 fee) external;
     function addTokenFees(address[] memory tokens, uint256[] memory fees) external;
-    function reflectFees(uint256 deadline) external;
-    function reflectFee(address token, uint256 deadline) external;
 }
