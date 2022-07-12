@@ -12,6 +12,4 @@ interface IFeeAggregator {
     function addFeeTokens(address[] calldata tokens) external;
     function removeFeeToken(address token) external;
     function setGoosebumpsFee(uint256 fee) external;
-    function addTokenFee(address token, uint256 fee) external;
-    function addTokenFees(address[] memory tokens, uint256[] memory fees) external;
 }

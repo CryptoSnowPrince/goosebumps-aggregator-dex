@@ -14,7 +14,6 @@ contract FeeAggregator is IFeeAggregator, Ownable {
 
     event LogWithdrawalETH(address indexed recipient, uint256 amount);
     event LogWithdrawToken(address indexed token, address indexed recipient, uint256 amount);
-    event LogResetTokensGathered(address indexed token);
     event LogSetGoosebumpsFee(uint256 fee);
     event LogAddFeeToken(address indexed token);
     event LogRemoveFeeToken(address indexed token);
@@ -27,24 +26,13 @@ contract FeeAggregator is IFeeAggregator, Ownable {
      * @notice Percentage which get deducted from a swap (1 = 0.1%)
      */
     uint256 public goosebumpsFee;
-    /**
-     * @notice Gathered feeToken amount
-     */
-    mapping(address => uint256) public tokensGathered;
-
-    uint256 private constant MAX_INT = 2**256 - 1;
 
     constructor(address _WETH) {
         goosebumpsFee = 1;
         WETH = _WETH;
     }
 
-    receive() external payable {
-        if (msg.sender != WETH) {
-            IWETH(WETH).deposit{value: msg.value}();
-            addTokenFee(WETH, msg.value);
-        }
-    }
+    receive() external payable {}
 
     //== MODIFIERS ==
     modifier ensure(uint deadline) {
@@ -131,34 +119,6 @@ contract FeeAggregator is IFeeAggregator, Ownable {
         goosebumpsFee = fee;
 
         emit LogSetGoosebumpsFee(fee);
-    }
-    
-    /**
-     * @notice Adds a fee to the tokensGathered list. For example from the DPEX router
-     * @param token fee token to check
-     * @param fee fee to add to the tokensGathered list
-     */
-    function addTokenFee(address token, uint256 fee) public override {
-        require (_feeTokens.contains(token), "Token is not a feeToken");
-        tokensGathered[token] += fee;
-    }
-    /**
-     * @notice Adds multiple fees to the tokensGathered list. For example from the DPEX router
-     * @param tokens fee tokens to check
-     * @param fees fees to add to the tokensGathered list
-     */
-    function addTokenFees(address[] memory tokens, uint256[] memory fees) external override {
-        require (tokens.length == fees.length, "Token is not a feeToken");
-        for(uint256 idx = 0; idx < tokens.length; idx++) {
-            require (_feeTokens.contains(tokens[idx]), "Token is not a feeToken");
-            tokensGathered[tokens[idx]] += fees[idx];
-        }
-    }
-
-    function resetTokensGathered(address token) external onlyOwner {
-        tokensGathered[token] = 0;
-
-        emit LogResetTokensGathered(token);
     }
 
     /**
