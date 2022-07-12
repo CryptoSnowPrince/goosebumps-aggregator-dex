@@ -21,24 +21,16 @@ contract FeeAggregator is IFeeAggregator, Ownable {
     //== Variables ==
     EnumerableSet.AddressSet private _feeTokens; // all the token where a fee is deducted from on swap
 
-    address public WETH;
     /**
      * @notice Percentage which get deducted from a swap (1 = 0.1%)
      */
     uint256 public goosebumpsFee;
 
-    constructor(address _WETH) {
+    constructor() {
         goosebumpsFee = 1;
-        WETH = _WETH;
     }
 
     receive() external payable {}
-
-    //== MODIFIERS ==
-    modifier ensure(uint deadline) {
-        require(deadline >= block.timestamp, 'FeeAggregator: EXPIRED');
-        _;
-    }
 
     //== VIEW ==
     /**
