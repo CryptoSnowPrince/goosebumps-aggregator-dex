@@ -195,7 +195,7 @@ contract FeeAggregator is IFeeAggregator, Ownable {
         require(IERC20(path[0]).approve(address(router), amountIn), "FeeAggregator: APPROVE_FAIL");
         require(to != address(this), "FeeAggregator: TO_ADDRESS_SHOULD_NOT_BE_FEEAGGREGATOR");
 
-        amounts = router.swapExactTokensForTokensSupportingFeeOnTransferTokens(factories, amountIn, amountOutMin, path, to, deadline);
+        router.swapExactTokensForTokensSupportingFeeOnTransferTokens(factories, amountIn, amountOutMin, path, to, deadline);
     }
 
     function swapExactTokensForETH(
@@ -211,6 +211,6 @@ contract FeeAggregator is IFeeAggregator, Ownable {
         require(IERC20(path[0]).approve(address(router), amountIn), "FeeAggregator: APPROVE_FAIL");
         require(to != address(this), "FeeAggregator: TO_ADDRESS_SHOULD_NOT_BE_FEEAGGREGATOR");
 
-        amounts = router.swapExactTokensForETHSupportingFeeOnTransferTokens(factories, amountIn, amountOutMin, path, to, deadline);
+        router.swapExactTokensForETHSupportingFeeOnTransferTokens(factories, amountIn, amountOutMin, path, to, deadline);
     }
 }
