@@ -99,7 +99,6 @@ contract GoosebumpsRouterPairs is IGoosebumpsRouterPairs, Ownable {
         return lpFees[factory];
     }
     
-    /** Router internal modifiers */
     function setFeeAggregator(address aggregator) external override onlyMultiSig {
         require(aggregator != address(0), "GoosebumpsRouterPairs: FEE_AGGREGATOR_NO_ADDRESS");
         feeAggregator = aggregator;
