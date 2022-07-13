@@ -48,7 +48,7 @@ contract FeeAggregator is IFeeAggregator, Ownable {
      * @notice checks if the token is a token where a fee is deducted from on swap
      * @param token fee token to check
      */
-    function isFeeToken(address token) public override view returns (bool) {
+    function isFeeToken(address token) external override view returns (bool) {
         return _feeTokens.contains(token);
     }
 
@@ -78,8 +78,7 @@ contract FeeAggregator is IFeeAggregator, Ownable {
      * @param token fee token to add
      */
     function addFeeToken(address token) public override onlyMultiSig {
-        require(!_feeTokens.contains(token), "FeeAggregator: ALREADY_FEE_TOKEN");
-        _feeTokens.add(token);
+        require(_feeTokens.add(token), "FeeAggregator: ALREADY_FEE_TOKEN");
 
         emit LogAddFeeToken(token);
     }
@@ -98,8 +97,7 @@ contract FeeAggregator is IFeeAggregator, Ownable {
      * @param token fee token to add
      */
     function removeFeeToken(address token) external override onlyMultiSig {
-        require(_feeTokens.contains(token), "FeeAggregator: NO_FEE_TOKEN");
-        _feeTokens.remove(token);
+        require(_feeTokens.remove(token), "FeeAggregator: NO_FEE_TOKEN");
 
         emit LogRemoveFeeToken(token);
     }
@@ -108,7 +106,7 @@ contract FeeAggregator is IFeeAggregator, Ownable {
      * @param fee percentage to set as fee
      */
     function setGoosebumpsFee(uint256 fee) external override onlyMultiSig {
-        require(fee >= 0 && fee <= FEE_DENOMINATOR * 30 / 100, "FeeAggregator: FEE_MIN_0_MAX_30");
+        require(fee <= FEE_DENOMINATOR * 30 / 100, "FeeAggregator: FEE_MIN_0_MAX_30");
         goosebumpsFee = fee;
 
         emit LogSetGoosebumpsFee(fee);
