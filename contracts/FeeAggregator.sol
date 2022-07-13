@@ -108,7 +108,7 @@ contract FeeAggregator is IFeeAggregator, Ownable {
      * @param fee percentage to set as fee
      */
     function setGoosebumpsFee(uint256 fee) external override onlyMultiSig {
-        require(fee >= 0 && fee <= FEE_DENOMINATOR * 49 / 100, "FeeAggregator: FEE_MIN_0_MAX_49");
+        require(fee >= 0 && fee <= FEE_DENOMINATOR * 30 / 100, "FeeAggregator: FEE_MIN_0_MAX_30");
         goosebumpsFee = fee;
 
         emit LogSetGoosebumpsFee(fee);
