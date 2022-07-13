@@ -22,12 +22,13 @@ contract FeeAggregator is IFeeAggregator, Ownable {
     EnumerableSet.AddressSet private _feeTokens; // all the token where a fee is deducted from on swap
 
     /**
-     * @notice Percentage which get deducted from a swap (1 = 0.1%)
+     * @notice Percentage which get deducted from a swap (1 = 100 / FEE_DENOMINATOR %)
      */
     uint256 public goosebumpsFee;
+    uint256 public constant FEE_DENOMINATOR = 10000;
 
     constructor() {
-        goosebumpsFee = 1;
+        goosebumpsFee = 5;
     }
 
     receive() external payable {}
@@ -56,7 +57,7 @@ contract FeeAggregator is IFeeAggregator, Ownable {
      * @param amount amount to calculate the fee for
      */
     function calculateFee(uint256 amount) public override view returns (uint256 fee, uint256 amountLeft) {
-        amountLeft = amount * (1000 - goosebumpsFee) / 1000;
+        amountLeft = amount * (FEE_DENOMINATOR - goosebumpsFee) / FEE_DENOMINATOR;
         fee = amount - amountLeft;
     }
     /**
@@ -103,11 +104,11 @@ contract FeeAggregator is IFeeAggregator, Ownable {
         emit LogRemoveFeeToken(token);
     }
     /**
-     * @notice set the percentage which get deducted from a swap (1 = 0.1%)
+     * @notice set the percentage which get deducted from a swap (1 = 100 / FEE_DENOMINATOR %)
      * @param fee percentage to set as fee
      */
     function setGoosebumpsFee(uint256 fee) external override onlyMultiSig {
-        require(fee >= 0 && fee <= 490, "FeeAggregator: FEE_MIN_0_MAX_49");
+        require(fee >= 0 && fee <= FEE_DENOMINATOR * 49 / 100, "FeeAggregator: FEE_MIN_0_MAX_49");
         goosebumpsFee = fee;
 
         emit LogSetGoosebumpsFee(fee);

@@ -46,7 +46,7 @@ library GoosebumpsLibrary {
     {
         require(amountIn > 0, 'GoosebumpsLibrary: INSUFFICIENT_INPUT_AMOUNT');
         require(reserveIn > 0 && reserveOut > 0, 'GoosebumpsLibrary: INSUFFICIENT_LIQUIDITY');
-        if (lpFee == 0) lpFee = 20; // default 0.2% fee
+        if (lpFee == 0) lpFee = 30; // default 0.3% fee
         if (!feePayed) {
             (fee,) = IFeeAggregator(feeAggregator).calculateFee(tokenIn, amountIn);
             amountIn -= fee;
@@ -64,7 +64,7 @@ library GoosebumpsLibrary {
     {
         require(amountOut > 0, 'GoosebumpsLibrary: INSUFFICIENT_OUTPUT_AMOUNT');
         require(reserveIn > 0 && reserveOut > 0, 'GoosebumpsLibrary: INSUFFICIENT_LIQUIDITY');
-        if (lpFee == 0) lpFee = 20; // default 0.2% fee
+        if (lpFee == 0) lpFee = 30; // default 0.3% fee
         if (!feePayed) {
             (fee,) = IFeeAggregator(feeAggregator).calculateFee(tokenOut, amountOut);
             amountOut += fee;
