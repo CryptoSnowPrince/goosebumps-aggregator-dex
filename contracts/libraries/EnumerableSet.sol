@@ -131,12 +131,6 @@ library EnumerableSet {
         return set._values[index];
     }
 
-    // Bytes32Set
-
-    struct Bytes32Set {
-        Set _inner;
-    }
-
     // AddressSet
 
     struct AddressSet {
@@ -189,11 +183,5 @@ library EnumerableSet {
      */
     function at(AddressSet storage set, uint256 index) internal view returns (address) {
         return address(uint160(uint256(_at(set._inner, index))));
-    }
-
-    // UintSet
-
-    struct UintSet {
-        Set _inner;
     }
 }
