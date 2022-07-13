@@ -4,7 +4,6 @@ pragma solidity 0.8.7;
 
 import "./interfaces/IGoosebumpsRouter.sol";
 import "./interfaces/IFeeAggregator.sol";
-import "./interfaces/IWETH.sol";
 import "./interfaces/IERC20.sol";
 import "./libraries/EnumerableSet.sol";
 import "./utils/Ownable.sol";
