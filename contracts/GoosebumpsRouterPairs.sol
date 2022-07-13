@@ -100,15 +100,15 @@ contract GoosebumpsRouterPairs is IGoosebumpsRouterPairs, Ownable {
     }
     
     /** Router internal modifiers */
-    function setFeeAggregator(address aggregator) external override onlyOwner {
+    function setFeeAggregator(address aggregator) external override onlyMultiSig {
         require(aggregator != address(0), "GoosebumpsRouterPairs: FEE_AGGREGATOR_NO_ADDRESS");
         feeAggregator = aggregator;
     }
-    function setFactory(address _factory, bytes32 initHash) external override onlyOwner returns (bool) {
+    function setFactory(address _factory, bytes32 initHash) external override onlyMultiSig returns (bool) {
         require(_factory != address(0), "GoosebumpsRouterPairs: FACTORY_NO_ADDRESS");
         return factories.set(_factory, initHash);
     }
-    function removeFactory(address _factory) external override onlyOwner returns (bool) {
+    function removeFactory(address _factory) external override onlyMultiSig returns (bool) {
         require(_factory != address(0), "GoosebumpsRouterPairs: FACTORY_NO_ADDRESS");
         return factories.remove(_factory);
     }
@@ -124,7 +124,7 @@ contract GoosebumpsRouterPairs is IGoosebumpsRouterPairs, Ownable {
         }
         return _allFactories;
     }
-    function setLPFee(address _factory, uint256 fee) external override onlyOwner {
+    function setLPFee(address _factory, uint256 fee) external override onlyMultiSig {
         require(_factory != address(0), "GoosebumpsRouterPairs: FACTORY_NO_ADDRESS");
         lpFees[_factory] = fee;
     }

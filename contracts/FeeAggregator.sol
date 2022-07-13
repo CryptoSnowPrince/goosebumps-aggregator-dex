@@ -76,7 +76,7 @@ contract FeeAggregator is IFeeAggregator, Ownable {
      * @notice add a token to deduct a fee for on swap
      * @param token fee token to add
      */
-    function addFeeToken(address token) public override onlyOwner {
+    function addFeeToken(address token) public override onlyMultiSig {
         require(!_feeTokens.contains(token), "FeeAggregator: ALREADY_FEE_TOKEN");
         _feeTokens.add(token);
 
@@ -86,7 +86,7 @@ contract FeeAggregator is IFeeAggregator, Ownable {
      * @notice add fee tokens to deduct a fee for on swap
      * @param tokens fee tokens to add
      */
-    function addFeeTokens(address[] calldata tokens) external override onlyOwner {
+    function addFeeTokens(address[] calldata tokens) external override onlyMultiSig {
         for(uint256 idx = 0; idx < tokens.length; idx++) {
             addFeeToken(tokens[idx]);
         }
@@ -96,7 +96,7 @@ contract FeeAggregator is IFeeAggregator, Ownable {
      * @notice remove a token to deduct a fee for on swap
      * @param token fee token to add
      */
-    function removeFeeToken(address token) external override onlyOwner {
+    function removeFeeToken(address token) external override onlyMultiSig {
         require(_feeTokens.contains(token), "FeeAggregator: NO_FEE_TOKEN");
         _feeTokens.remove(token);
 
@@ -106,7 +106,7 @@ contract FeeAggregator is IFeeAggregator, Ownable {
      * @notice set the percentage which get deducted from a swap (1 = 0.1%)
      * @param fee percentage to set as fee
      */
-    function setGoosebumpsFee(uint256 fee) external override onlyOwner {
+    function setGoosebumpsFee(uint256 fee) external override onlyMultiSig {
         require(fee >= 0 && fee <= 490, "FeeAggregator: FEE_MIN_0_MAX_49");
         goosebumpsFee = fee;
 
@@ -116,7 +116,7 @@ contract FeeAggregator is IFeeAggregator, Ownable {
     /**
      * @notice  Owner will withdraw ETH and will use to benefit the Empire token holders.
      */
-    function withdrawETH(address payable recipient, uint256 amount) external onlyOwner
+    function withdrawETH(address payable recipient, uint256 amount) external onlyMultiSig
     {
         require(amount <= (address(this)).balance, "INSUFFICIENT_FUNDS");
         recipient.transfer(amount);
@@ -127,7 +127,7 @@ contract FeeAggregator is IFeeAggregator, Ownable {
      * @notice  Owner will withdraw ERC20 token that have the price and then will use to benefit the Empire token holders.
      #          Should not be withdrawn scam token.
      */
-    function withdrawToken(IERC20 token, address recipient, uint256 amount) external onlyOwner {
+    function withdrawToken(IERC20 token, address recipient, uint256 amount) external onlyMultiSig {
         require(amount <= token.balanceOf(address(this)), "INSUFFICIENT_FUNDS");
         require(token.transfer(recipient, amount), "Transfer Fail");
 
@@ -142,7 +142,7 @@ contract FeeAggregator is IFeeAggregator, Ownable {
         address[] calldata path,
         address to,
         uint256 deadline
-    ) external onlyOwner {
+    ) external onlyMultiSig {
         require(IERC20(path[0]).balanceOf(address(this)) >= amountIn, "FeeAggregator: NO_FEE_TOKEN_BALANCE");
         require(IERC20(path[0]).approve(address(router), amountIn), "FeeAggregator: APPROVE_FAIL");
         require(to != address(this), "FeeAggregator: TO_ADDRESS_SHOULD_NOT_BE_FEEAGGREGATOR");
@@ -158,7 +158,7 @@ contract FeeAggregator is IFeeAggregator, Ownable {
         address[] calldata path,
         address to,
         uint256 deadline
-    ) external onlyOwner {
+    ) external onlyMultiSig {
         require(IERC20(path[0]).balanceOf(address(this)) >= amountIn, "FeeAggregator: NO_FEE_TOKEN_BALANCE");
         require(IERC20(path[0]).approve(address(router), amountIn), "FeeAggregator: APPROVE_FAIL");
         require(to != address(this), "FeeAggregator: TO_ADDRESS_SHOULD_NOT_BE_FEEAGGREGATOR");
