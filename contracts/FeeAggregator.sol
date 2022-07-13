@@ -115,7 +115,7 @@ contract FeeAggregator is IFeeAggregator, Ownable {
     }
 
     /**
-     * @notice  Owner will withdraw ETH and will use to benefit the Empire token holders.
+     * @notice  onlyMultiSig will withdraw ETH and will use to benefit the Empire token holders.
      */
     function withdrawETH(address payable recipient, uint256 amount) external onlyMultiSig
     {
@@ -125,7 +125,7 @@ contract FeeAggregator is IFeeAggregator, Ownable {
     }
 
     /**
-     * @notice  Owner will withdraw ERC20 token that have the price and then will use to benefit the Empire token holders.
+     * @notice  onlyMultiSig will withdraw ERC20 token that have the price and then will use to benefit the Empire token holders.
      #          Should not be withdrawn scam token.
      */
     function withdrawToken(IERC20 token, address recipient, uint256 amount) external onlyMultiSig {
