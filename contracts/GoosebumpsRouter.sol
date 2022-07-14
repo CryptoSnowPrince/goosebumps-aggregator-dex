@@ -8,7 +8,6 @@ import './interfaces/IGoosebumpsRouter.sol';
 import './interfaces/IGoosebumpsFactory.sol';
 import './interfaces/IGoosebumpsRouterPair.sol';
 import './interfaces/IGoosebumpsRouterPairs.sol';
-import './interfaces/IFeeAggregator.sol';
 import './interfaces/IERC20.sol';
 import './interfaces/IWETH.sol';
 
