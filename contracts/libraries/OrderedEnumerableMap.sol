@@ -130,16 +130,6 @@ library OrderedEnumerableMap {
     }
 
     /**
-     * @dev Tries to returns the value associated with `key`.  O(1).
-     * Does not revert if `key` is not in the map.
-     */
-    function _tryGet(MapExtensions storage map, bytes32 key) private view returns (bool, bytes32) {
-        uint256 keyIndex = map._indexes[key];
-        if (keyIndex == 0) return (false, 0); // Equivalent to contains(map, key)
-        return (true, map._entries[keyIndex - 1]._value); // All indexes are 1-based
-    }
-
-    /**
      * @dev Returns the value associated with `key`.  O(1).
      *
      * Requirements:
@@ -149,18 +139,6 @@ library OrderedEnumerableMap {
     function _get(MapExtensions storage map, bytes32 key) private view returns (bytes32) {
         uint256 keyIndex = map._indexes[key];
         require(keyIndex != 0, "EnumerableMap: nonexistent key"); // Equivalent to contains(map, key)
-        return map._entries[keyIndex - 1]._value; // All indexes are 1-based
-    }
-
-    /**
-     * @dev Same as {_get}, with a custom error message when `key` is not in the map.
-     *
-     * CAUTION: This function is deprecated because it requires allocating memory for the error
-     * message unnecessarily. For custom revert reasons use {_tryGet}.
-     */
-    function _get(MapExtensions storage map, bytes32 key, string memory errorMessage) private view returns (bytes32) {
-        uint256 keyIndex = map._indexes[key];
-        require(keyIndex != 0, errorMessage); // Equivalent to contains(map, key)
         return map._entries[keyIndex - 1]._value; // All indexes are 1-based
     }
 
@@ -216,15 +194,6 @@ library OrderedEnumerableMap {
     function at(AddressToBytes32Map storage map, uint256 index) internal view returns (address, bytes32) {
         (bytes32 key, bytes32 value) = _at(map._inner, index);
         return (address(uint160(uint256(key))), value);
-    }
-
-    /**
-     * @dev Tries to returns the value associated with `key`.  O(1).
-     * Does not revert if `key` is not in the map.
-     */
-    function tryGet(AddressToBytes32Map storage map, address key) internal view returns (bool, bytes32) {
-        (bool success, bytes32 value) = _tryGet(map._inner, bytes32(uint256(uint160(key))));
-        return (success, value);
     }
 
     /**
