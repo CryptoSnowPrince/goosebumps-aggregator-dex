@@ -2,7 +2,6 @@
 
 pragma solidity 0.8.7;
 
-import './interfaces/IGoosebumpsFactory.sol';
 import './GoosebumpsPair.sol';
 
 contract GoosebumpsFactory is IGoosebumpsFactory {
