@@ -17,7 +17,7 @@ contract GoosebumpsFactory is IGoosebumpsFactory {
         feeToSetter = _feeToSetter;
     }
 
-    function allPairsLength() external override view returns (uint) {
+    function allPairsLength() external override view returns (uint256) {
         return allPairs.length;
     }
 
