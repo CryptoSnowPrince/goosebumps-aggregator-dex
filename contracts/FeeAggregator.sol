@@ -6,6 +6,7 @@ import "./interfaces/IGoosebumpsRouter.sol";
 import "./interfaces/IFeeAggregator.sol";
 import "./interfaces/IERC20.sol";
 import "./libraries/EnumerableSet.sol";
+import "./libraries/TransferHelper.sol";
 import "./utils/Ownable.sol";
 
 contract FeeAggregator is IFeeAggregator, Ownable {
@@ -142,7 +143,7 @@ contract FeeAggregator is IFeeAggregator, Ownable {
         uint256 deadline
     ) external onlyMultiSig {
         require(IERC20(path[0]).balanceOf(address(this)) >= amountIn, "FeeAggregator: NO_FEE_TOKEN_BALANCE");
-        require(IERC20(path[0]).approve(address(router), amountIn), "FeeAggregator: APPROVE_FAIL");
+        TransferHelper.safeApprove(path[0], address(router), amountIn);
         require(to != address(this), "FeeAggregator: TO_ADDRESS_SHOULD_NOT_BE_FEEAGGREGATOR");
 
         router.swapExactTokensForTokensSupportingFeeOnTransferTokens(factories, amountIn, amountOutMin, path, to, deadline);
@@ -158,7 +159,7 @@ contract FeeAggregator is IFeeAggregator, Ownable {
         uint256 deadline
     ) external onlyMultiSig {
         require(IERC20(path[0]).balanceOf(address(this)) >= amountIn, "FeeAggregator: NO_FEE_TOKEN_BALANCE");
-        require(IERC20(path[0]).approve(address(router), amountIn), "FeeAggregator: APPROVE_FAIL");
+        TransferHelper.safeApprove(path[0], address(router), amountIn);
         require(to != address(this), "FeeAggregator: TO_ADDRESS_SHOULD_NOT_BE_FEEAGGREGATOR");
 
         router.swapExactTokensForETHSupportingFeeOnTransferTokens(factories, amountIn, amountOutMin, path, to, deadline);
