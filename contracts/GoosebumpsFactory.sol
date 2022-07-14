@@ -14,6 +14,7 @@ contract GoosebumpsFactory is IGoosebumpsFactory {
     address[] public override allPairs;
 
     constructor (address _feeToSetter) {
+        require(_feeToSetter != address(0), "GoosebumpsFactory: ZERO_ADDRESS");
         feeToSetter = _feeToSetter;
     }
 
@@ -40,11 +41,13 @@ contract GoosebumpsFactory is IGoosebumpsFactory {
 
     function setFeeTo(address _feeTo) external override {
         require(msg.sender == feeToSetter, 'GoosebumpsFactory: FORBIDDEN');
+        require(_feeTo != address(0), "GoosebumpsFactory: ZERO_ADDRESS");
         feeTo = _feeTo;
     }
 
     function setFeeToSetter(address _feeToSetter) external override {
         require(msg.sender == feeToSetter, 'GoosebumpsFactory: FORBIDDEN');
+        require(_feeToSetter != address(0), "GoosebumpsFactory: ZERO_ADDRESS");
         feeToSetter = _feeToSetter;
     }
 }

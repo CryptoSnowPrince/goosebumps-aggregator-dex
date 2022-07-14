@@ -65,6 +65,8 @@ contract GoosebumpsPair is GoosebumpsERC20 {
     // called once by the factory at time of deployment
     function initialize(address _token0, address _token1) external {
         require(msg.sender == factory, 'GoosebumpsPair: FORBIDDEN'); // sufficient check
+        require(_token0 != address(0), "GoosebumpsPair: ZERO_ADDRESS");
+        require(_token1 != address(0), "GoosebumpsPair: ZERO_ADDRESS");
         token0 = _token0;
         token1 = _token1;
     }
