@@ -21,6 +21,7 @@ contract GoosebumpsRouterPairs is IGoosebumpsRouterPairs, Ownable {
     }
 
     constructor(address _aggregator) {
+        require(_aggregator != address(0), "GoosebumpsRouterPairs: ZERO_ADDRESS");
         feeAggregator = _aggregator;
     }
 

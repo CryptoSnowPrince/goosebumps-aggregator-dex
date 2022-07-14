@@ -87,7 +87,7 @@ library GoosebumpsLibrary {
         amounts = new uint256[](path.length);
         amounts[0] = amountIn;
         uint256 feeAmountTmp;
-        for (uint256 i; i < path.length - 1; i++) {
+        for (uint256 i = 0; i < path.length - 1; i++) {
             (uint256 reserveIn, uint256 reserveOut) = 
                 getReserves(factories[i], initPairHashes[i], path[i], path[i + 1]);
             (amounts[i + 1], feeAmountTmp) = getAmountOut(feeAggregator, path[i], 
