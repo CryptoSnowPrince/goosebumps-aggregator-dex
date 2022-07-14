@@ -394,31 +394,27 @@ contract GoosebumpsRouter is IGoosebumpsRouter {
             (address token0,) = GoosebumpsLibrary.sortTokens(input, output);
             IGoosebumpsRouterPair pair = IGoosebumpsRouterPair(IGoosebumpsRouterPairs(routerPairs).pairFor(factories[i], input, output));
 
-            // fee is only payed on the first or last token
-            address to = i < path.length - 2 
-                ? IGoosebumpsRouterPairs(routerPairs).pairFor(factories[i + 1], output, path[i + 2])
-                : _to;
-            _trySwap(
-                pair,
-                input == token0 ? uint256(0) : _getAmountOut(factories[i], pair, input, token0), 
-                input == token0 ? _getAmountOut(factories[i], pair, input, token0) : uint256(0),
-                to
+            uint256 amountInput;
+            uint256 amountOutput;
+            { // scope to avoid stack too deep errors
+            (uint256 reserve0, uint256 reserve1,) = pair.getReserves();
+            (uint256 reserveInput, uint256 reserveOutput) = input == token0 ? (reserve0, reserve1) : (reserve1, reserve0);
+            amountInput = IERC20(input).balanceOf(address(pair)) - reserveInput;
+            (amountOutput,) = IGoosebumpsRouterPairs(routerPairs).getAmountOut(
+                factories[i],
+                input,
+                true,
+                amountInput,
+                reserveInput,
+                reserveOutput
             );
+            }
+            (uint256 amount0Out, uint256 amount1Out) = input == token0 ? (uint256(0), amountOutput) : (amountOutput, uint256(0));
+
+            // fee is only payed on the first or last token
+            address to = i < path.length - 2 ? IGoosebumpsRouterPairs(routerPairs).pairFor(factories[i + 1], output, path[i + 2]) : _to;
+            _trySwap(pair, amount0Out, amount1Out, to);
         }
-    }
-    function _getAmountOut(address factory, IGoosebumpsRouterPair pair, address input, address token0) 
-        internal virtual returns (uint256 amountOutput) 
-    {
-        (uint256 reserve0, uint256 reserve1,) = pair.getReserves();
-        uint256 amountInput = IERC20(input).balanceOf(address(pair)) - (input == token0 ? reserve0 : reserve1);
-        (amountOutput,) = IGoosebumpsRouterPairs(routerPairs).getAmountOut(
-            factory,
-            input,
-            true, 
-            amountInput,
-            input == token0 ? reserve0 : reserve1,
-            input == token0 ? reserve1 : reserve0
-        );
     }
     function swapExactTokensForTokensSupportingFeeOnTransferTokens(
         address[] calldata factories,
