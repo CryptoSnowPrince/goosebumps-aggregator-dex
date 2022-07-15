@@ -53,7 +53,7 @@ contract GoosebumpsRouter is IGoosebumpsRouter {
     ) internal virtual returns (uint256 amountA, uint256 amountB) {
         // create the pair if it doesn't exist yet
         if (IGoosebumpsFactory(baseFactory).getPair(tokenA, tokenB) == address(0)) {
-            IGoosebumpsFactory(baseFactory).createPair(tokenA, tokenB);
+            require(IGoosebumpsFactory(baseFactory).createPair(tokenA, tokenB) != address(0), "GoosebumpsRouter: CREATE_PAIR_FAILED");
         }
         (uint256 reserveA, uint256 reserveB) = IGoosebumpsRouterPairs(routerPairs).getReserves(baseFactory, tokenA, tokenB);
         if (reserveA == 0 && reserveB == 0) {
@@ -242,7 +242,7 @@ contract GoosebumpsRouter is IGoosebumpsRouter {
     ) internal {
         if (path[0] == feeToken) transferFeeWhenNeeded(msg.sender, feeToken, feeAmount);
 
-        for (uint256 i; i < path.length - 1; i++) {
+        for (uint256 i = 0; i < path.length - 1; i++) {
             (address input, address output) = (path[i], path[i + 1]);
             (address token0,) = GoosebumpsLibrary.sortTokens(input, output);
             uint256 amountOut = amounts[i + 1];
@@ -389,7 +389,7 @@ contract GoosebumpsRouter is IGoosebumpsRouter {
     function _swapSupportingFeeOnTransferTokens(address[] memory factories, address[] memory path, address _to) 
         internal virtual
     {
-        for (uint256 i; i < path.length - 1; i++) {
+        for (uint256 i = 0; i < path.length - 1; i++) {
             (address input, address output) = (path[i], path[i + 1]);
             (address token0,) = GoosebumpsLibrary.sortTokens(input, output);
             IGoosebumpsRouterPair pair = IGoosebumpsRouterPair(IGoosebumpsRouterPairs(routerPairs).pairFor(factories[i], input, output));
