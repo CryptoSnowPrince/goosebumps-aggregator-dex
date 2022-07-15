@@ -15,9 +15,9 @@ contract GoosebumpsPair is GoosebumpsERC20 {
     uint256 public constant MINIMUM_LIQUIDITY = 10**3;
     bytes4 private constant SELECTOR = bytes4(keccak256(bytes('transfer(address,uint256)')));
 
-    address public factory;
-    address public token0;
-    address public token1;
+    address public immutable factory;
+    address public immutable token0;
+    address public immutable token1;
 
     uint112 private reserve0;           // uses single storage slot, accessible via getReserves
     uint112 private reserve1;           // uses single storage slot, accessible via getReserves
@@ -58,15 +58,8 @@ contract GoosebumpsPair is GoosebumpsERC20 {
     );
     event Sync(uint112 reserve0, uint112 reserve1);
 
-    constructor() {
+    constructor(address _token0, address _token1) {
         factory = msg.sender;
-    }
-
-    // called once by the factory at time of deployment
-    function initialize(address _token0, address _token1) external {
-        require(msg.sender == factory, 'GoosebumpsPair: FORBIDDEN'); // sufficient check
-        require(_token0 != address(0), "GoosebumpsPair: ZERO_ADDRESS");
-        require(_token1 != address(0), "GoosebumpsPair: ZERO_ADDRESS");
         token0 = _token0;
         token1 = _token1;
     }
