@@ -7,14 +7,20 @@ import './GoosebumpsPair.sol';
 contract GoosebumpsFactory is IGoosebumpsFactory {
     bytes32 public constant INIT_CODE_PAIR_HASH = keccak256(abi.encodePacked(type(GoosebumpsPair).creationCode));
     address public override feeTo;
-    address public override feeToSetter;
+    /**
+     * @dev Must be Multi-Signature Wallet.
+     */
+    address public override multiSigFeeToSetter;
 
     mapping(address => mapping(address => address)) public override getPair;
     address[] public override allPairs;
 
-    constructor (address _feeToSetter) {
-        require(_feeToSetter != address(0), "GoosebumpsFactory: ZERO_ADDRESS");
-        feeToSetter = _feeToSetter;
+    event LogSetFeeTo(address feeTo);
+    event LogSetFeeToSetter(address multiSigFeeToSetter);
+
+    constructor (address _multiSigFeeToSetter) {
+        require(_multiSigFeeToSetter != address(0), "GoosebumpsFactory: ZERO_ADDRESS");
+        multiSigFeeToSetter = _multiSigFeeToSetter;
     }
 
     function allPairsLength() external override view returns (uint256) {
@@ -39,14 +45,20 @@ contract GoosebumpsFactory is IGoosebumpsFactory {
     }
 
     function setFeeTo(address _feeTo) external override {
-        require(msg.sender == feeToSetter, 'GoosebumpsFactory: FORBIDDEN');
+        require(msg.sender == multiSigFeeToSetter, 'GoosebumpsFactory: FORBIDDEN');
         require(_feeTo != address(0), "GoosebumpsFactory: ZERO_ADDRESS");
+        require(_feeTo != feeTo, "GoosebumpsFactory: SAME_ADDRESS");
         feeTo = _feeTo;
+
+        emit LogSetFeeTo(_feeTo);
     }
 
-    function setFeeToSetter(address _feeToSetter) external override {
-        require(msg.sender == feeToSetter, 'GoosebumpsFactory: FORBIDDEN');
-        require(_feeToSetter != address(0), "GoosebumpsFactory: ZERO_ADDRESS");
-        feeToSetter = _feeToSetter;
+    function setFeeToSetter(address _multiSigFeeToSetter) external override {
+        require(msg.sender == multiSigFeeToSetter, 'GoosebumpsFactory: FORBIDDEN');
+        require(_multiSigFeeToSetter != address(0), "GoosebumpsFactory: ZERO_ADDRESS");
+        require(_multiSigFeeToSetter != multiSigFeeToSetter, "GoosebumpsFactory: SAME_ADDRESS");
+        multiSigFeeToSetter = _multiSigFeeToSetter;
+
+        emit LogSetFeeToSetter(_multiSigFeeToSetter);
     }
 }

@@ -26,8 +26,8 @@ interface IGoosebumpsRouterPairs {
         external view returns (uint256[] memory amounts, uint256 feePayed, address feeToken);
 
     function setFeeAggregator(address aggregator) external;
-    function setFactory(address _factory, bytes32 initHash) external returns (bool);
-    function removeFactory(address _factory) external returns (bool);
+    function setFactory(address _factory, bytes32 initHash) external;
+    function removeFactory(address _factory) external;
     function hasFactory(address _factory) external view returns (bool);
     function allFactories() external view returns (address[] memory);
     function setLPFee(address _factory, uint256 fee) external;

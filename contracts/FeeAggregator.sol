@@ -78,6 +78,7 @@ contract FeeAggregator is IFeeAggregator, Ownable {
      * @param token fee token to add
      */
     function addFeeToken(address token) public override onlyMultiSig {
+        require(token != address(0), "FeeAggregator: ZERO_ADDRESS");
         require(_feeTokens.add(token), "FeeAggregator: ALREADY_FEE_TOKEN");
 
         emit LogAddFeeToken(token);
@@ -97,6 +98,7 @@ contract FeeAggregator is IFeeAggregator, Ownable {
      * @param token fee token to add
      */
     function removeFeeToken(address token) external override onlyMultiSig {
+        require(token != address(0), "FeeAggregator: ZERO_ADDRESS");
         require(_feeTokens.remove(token), "FeeAggregator: NO_FEE_TOKEN");
 
         emit LogRemoveFeeToken(token);
@@ -107,6 +109,7 @@ contract FeeAggregator is IFeeAggregator, Ownable {
      */
     function setGoosebumpsFee(uint256 fee) external override onlyMultiSig {
         require(fee <= FEE_DENOMINATOR * 30 / 100, "FeeAggregator: FEE_MIN_0_MAX_30");
+        require(fee != goosebumpsFee, "FeeAggregator: SAME_VALUE");
         goosebumpsFee = fee;
 
         emit LogSetGoosebumpsFee(fee);
@@ -144,7 +147,6 @@ contract FeeAggregator is IFeeAggregator, Ownable {
     ) external onlyMultiSig {
         require(IERC20(path[0]).balanceOf(address(this)) >= amountIn, "FeeAggregator: NO_FEE_TOKEN_BALANCE");
         TransferHelper.safeApprove(path[0], address(router), amountIn);
-        require(to != address(this), "FeeAggregator: TO_ADDRESS_SHOULD_NOT_BE_FEEAGGREGATOR");
 
         router.swapExactTokensForTokensSupportingFeeOnTransferTokens(factories, amountIn, amountOutMin, path, to, deadline);
     }
@@ -160,7 +162,6 @@ contract FeeAggregator is IFeeAggregator, Ownable {
     ) external onlyMultiSig {
         require(IERC20(path[0]).balanceOf(address(this)) >= amountIn, "FeeAggregator: NO_FEE_TOKEN_BALANCE");
         TransferHelper.safeApprove(path[0], address(router), amountIn);
-        require(to != address(this), "FeeAggregator: TO_ADDRESS_SHOULD_NOT_BE_FEEAGGREGATOR");
 
         router.swapExactTokensForETHSupportingFeeOnTransferTokens(factories, amountIn, amountOutMin, path, to, deadline);
     }

@@ -15,6 +15,11 @@ contract GoosebumpsRouterPairs is IGoosebumpsRouterPairs, Ownable {
     OrderedEnumerableMap.AddressToBytes32Map private factories;
     mapping(address => uint256) public lpFees;
 
+    event LogSetFeeAggregator(address indexed aggregator);
+    event LogSetFactory(address indexed factory, bytes32 initHash, bool newFactory);
+    event LogRemoveFactory(address indexed factory);
+    event LogSetLPFee(address indexed factory, uint256 lpFee);
+
     modifier validFactory(address factory) {
         require(hasFactory(factory), 'GoosebumpsRouterPairs: INVALID_FACTORY');
         _;
@@ -101,19 +106,27 @@ contract GoosebumpsRouterPairs is IGoosebumpsRouterPairs, Ownable {
     }
     
     function setFeeAggregator(address aggregator) external override onlyMultiSig {
-        require(aggregator != address(0), "GoosebumpsRouterPairs: FEE_AGGREGATOR_NO_ADDRESS");
+        require(aggregator != address(0), "GoosebumpsRouterPairs: ZERO_ADDRESS");
+        require(aggregator != feeAggregator, "GoosebumpsRouterPairs: SAME_ADDRESS");
         feeAggregator = aggregator;
+
+        emit LogSetFeeAggregator(aggregator);
     }
-    function setFactory(address _factory, bytes32 initHash) external override onlyMultiSig returns (bool) {
-        require(_factory != address(0), "GoosebumpsRouterPairs: FACTORY_NO_ADDRESS");
-        return factories.set(_factory, initHash);
+    function setFactory(address _factory, bytes32 initHash) external override onlyMultiSig {
+        require(_factory != address(0), "GoosebumpsRouterPairs: ZERO_ADDRESS");
+        // if new Factory, return true, if only set `initHash`, return false.
+        bool newFactory = factories.set(_factory, initHash);
+
+        emit LogSetFactory(_factory, initHash, newFactory);
     }
-    function removeFactory(address _factory) external override onlyMultiSig returns (bool) {
-        require(_factory != address(0), "GoosebumpsRouterPairs: FACTORY_NO_ADDRESS");
-        return factories.remove(_factory);
+    function removeFactory(address _factory) external override onlyMultiSig {
+        require(_factory != address(0), "GoosebumpsRouterPairs: ZERO_ADDRESS");
+        require(factories.remove(_factory), "GoosebumpsRouterPairs: NOT_FOUND");
+
+        emit LogRemoveFactory(_factory);
     }
     function hasFactory(address _factory) public override view returns (bool) {
-        require(_factory != address(0), "GoosebumpsRouterPairs: FACTORY_NO_ADDRESS");
+        require(_factory != address(0), "GoosebumpsRouterPairs: ZERO_ADDRESS");
         return factories.contains(_factory);
     }
     function allFactories() external override view returns (address[] memory) {
@@ -124,8 +137,11 @@ contract GoosebumpsRouterPairs is IGoosebumpsRouterPairs, Ownable {
         }
         return _allFactories;
     }
-    function setLPFee(address _factory, uint256 fee) external override onlyMultiSig {
-        require(_factory != address(0), "GoosebumpsRouterPairs: FACTORY_NO_ADDRESS");
-        lpFees[_factory] = fee;
+    function setLPFee(address _factory, uint256 _lpFee) external override onlyMultiSig {
+        require(_factory != address(0), "GoosebumpsRouterPairs: ZERO_ADDRESS");
+        require(lpFees[_factory] != _lpFee, "GoosebumpsRouterPairs: SAME_VALUE");
+        lpFees[_factory] = _lpFee;
+
+        emit LogSetLPFee(_factory, _lpFee);
     }
 }
