@@ -216,7 +216,7 @@ contract GoosebumpsRouter is IGoosebumpsRouter {
         );
     }
     /**
-     * @dev to avoids stack too deep errors
+     * @dev to avoid stack too deep errors
      */
     function permit(
         address tokenA,
@@ -483,7 +483,7 @@ contract GoosebumpsRouter is IGoosebumpsRouter {
         TransferHelper.safeTransferETH(to, amountOut);
     }
     /**
-     * @dev to avoids stack too deep errors
+     * @dev to avoid stack too deep errors
      */
     function transferAndSwap(
         address[] calldata factories,
