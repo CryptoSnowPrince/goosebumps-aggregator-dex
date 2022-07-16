@@ -15,9 +15,14 @@ contract GoosebumpsPair is GoosebumpsERC20 {
     uint256 public constant MINIMUM_LIQUIDITY = 10**3;
     bytes4 private constant SELECTOR = bytes4(keccak256(bytes('transfer(address,uint256)')));
 
+    /**
+     * @dev `factory` must be GoosebumpsFactory contract address.
+     *      GoosebumpsPair contract can be deploy by any EOA, but in this case, `factory` is not GoosebumpsFactory contract address.
+     *      GoosebumpsPair contract that is deployed by any EOA will never use in Goosebumps eco-system because `factory` is an EOA.
+     */
     address public immutable factory;
-    address public immutable token0;
-    address public immutable token1;
+    address public token0;
+    address public token1;
 
     uint112 private reserve0;           // uses single storage slot, accessible via getReserves
     uint112 private reserve1;           // uses single storage slot, accessible via getReserves
@@ -58,8 +63,13 @@ contract GoosebumpsPair is GoosebumpsERC20 {
     );
     event Sync(uint112 reserve0, uint112 reserve1);
 
-    constructor(address _token0, address _token1) {
+    constructor() {
         factory = msg.sender;
+    }
+
+    // called once by the factory at time of deployment
+    function initialize(address _token0, address _token1) external {
+        require(msg.sender == factory, 'GoosebumpsPair: FORBIDDEN'); // sufficient check
         token0 = _token0;
         token1 = _token1;
     }
