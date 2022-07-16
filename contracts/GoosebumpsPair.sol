@@ -17,8 +17,11 @@ contract GoosebumpsPair is GoosebumpsERC20 {
 
     /**
      * @dev `factory` must be GoosebumpsFactory contract address.
-     *      GoosebumpsPair contract can be deploy by any EOA, but in this case, `factory` is not GoosebumpsFactory contract address.
-     *      GoosebumpsPair contract that is deployed by any EOA will never use in Goosebumps eco-system because `factory` is an EOA.
+     *
+     * Note GoosebumpsPair contract can be deploy by any EOA, 
+     * but in this case, `factory` is not GoosebumpsFactory contract address.
+     * GoosebumpsPair contract that is deployed by any EOA never use in Goosebumps eco-system 
+     * because `factory` is an EOA, not GoosebumpsFactory contract address.
      */
     address public immutable factory;
     address public token0;
@@ -67,7 +70,13 @@ contract GoosebumpsPair is GoosebumpsERC20 {
         factory = msg.sender;
     }
 
-    // called once by the factory at time of deployment
+    /**
+     * @dev `initialize` is called once by the factory at time of deployment.
+     * 
+     * Note When `initialize` is called, input params are checked by the factory, 
+     * and the Goosebumps eco-system use the pair contracts that are deployed by the factory, not EOA. 
+     * Because of this, `zero-address check` is skipped.
+     */
     function initialize(address _token0, address _token1) external {
         require(msg.sender == factory, 'GoosebumpsPair: FORBIDDEN'); // sufficient check
         token0 = _token0;
