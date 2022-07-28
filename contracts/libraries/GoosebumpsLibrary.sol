@@ -41,15 +41,11 @@ library GoosebumpsLibrary {
     }
 
     // given an input amount of an asset and pair reserves, returns the maximum output amount of the other asset
-    function getAmountOut(address feeAggregator, address tokenIn, bool feePayed, uint256 amountIn, uint256 reserveIn, uint256 reserveOut, uint256 lpFee) 
-        internal view returns (uint256 amountOut, uint256 fee)
+    function getAmountOut(uint256 amountIn, uint256 reserveIn, uint256 reserveOut, uint256 lpFee) 
+        internal pure returns (uint256 amountOut)
     {
         require(amountIn > 0, 'GoosebumpsLibrary: INSUFFICIENT_INPUT_AMOUNT');
         require(reserveIn > 0 && reserveOut > 0, 'GoosebumpsLibrary: INSUFFICIENT_LIQUIDITY');
-        if (!feePayed) {
-            (fee,) = IFeeAggregator(feeAggregator).calculateFee(tokenIn, amountIn);
-            amountIn -= fee;
-        }
         amountIn = amountIn * (10000 - lpFee);
         uint256 numerator = amountIn * reserveOut;
         uint256 denominator = reserveIn * 10000 + amountIn;
@@ -57,16 +53,11 @@ library GoosebumpsLibrary {
     }
 
     // given an output amount of an asset and pair reserves, returns a required input amount of the other asset
-    function getAmountIn(address feeAggregator, address tokenOut, bool feePayed,
-                        uint256 amountOut, uint256 reserveIn, uint256 reserveOut, uint256 lpFee) 
-        internal view returns (uint256 amountIn, uint256 fee)
+    function getAmountIn(uint256 amountOut, uint256 reserveIn, uint256 reserveOut, uint256 lpFee) 
+        internal pure returns (uint256 amountIn)
     {
         require(amountOut > 0, 'GoosebumpsLibrary: INSUFFICIENT_OUTPUT_AMOUNT');
         require(reserveIn > 0 && reserveOut > 0, 'GoosebumpsLibrary: INSUFFICIENT_LIQUIDITY');
-        if (!feePayed) {
-            (fee,) = IFeeAggregator(feeAggregator).calculateFee(tokenOut, amountOut);
-            amountOut += fee;
-        }
         uint256 numerator = reserveIn * amountOut * 10000;
         uint256 denominator = (reserveOut - amountOut) * (10000 - lpFee);
         amountIn = numerator / denominator + 1;
@@ -80,35 +71,21 @@ library GoosebumpsLibrary {
         uint256 amountIn,
         address[] memory path,
         uint256[] memory lpFees
-    ) internal view returns (uint256[] memory amounts, uint256 feeAmount, address feeToken) {
+    ) internal view returns (uint256[] memory amounts, uint256 feeAmount) {
         require(path.length >= 2, 'GoosebumpsLibrary: INVALID_PATH');
         amounts = new uint256[](path.length);
-        amounts[0] = amountIn;
-        uint256 feeAmountTmp;
+        (feeAmount, amounts[0]) = IFeeAggregator(feeAggregator).calculateFeeAndAmountOut(amountIn);
         for (uint256 i = 0; i < path.length - 1; i++) {
             (uint256 reserveIn, uint256 reserveOut) = 
                 getReserves(factories[i], initPairHashes[i], path[i], path[i + 1]);
-            (amounts[i + 1], feeAmountTmp) = getAmountOut(feeAggregator, path[i], 
-                feeAmount > 0 || i > 0, amounts[i], reserveIn, reserveOut, lpFees[i]);
-            if (feeAmountTmp > 0) {
-                amounts[i] -= feeAmountTmp;
-                feeToken = path[i];
-                feeAmount = feeAmountTmp;
-            }
-        }
-
-        if (feeAmount == 0) {
-            (feeAmountTmp,) = IFeeAggregator(feeAggregator)
-                .calculateFee(path[path.length - 1], amounts[amounts.length - 1]);
-            if (feeAmountTmp > 0) {
-                amounts[amounts.length - 1] -= feeAmountTmp;
-                feeToken = path[path.length - 1];
-                feeAmount = feeAmountTmp;
-            }
+            amounts[i + 1] = getAmountOut(amounts[i], reserveIn, reserveOut, lpFees[i]);
         }
     }
 
-    // performs chained getAmountIn calculations on any number of pairs
+    /**
+     * Note performs chained getAmountIn calculations on any number of pairs.
+     *      totalAmountIn = amounts[0] + feeAmount
+     */
     function getAmountsIn(
         address feeAggregator,
         address[] memory factories,
@@ -116,28 +93,15 @@ library GoosebumpsLibrary {
         uint256 amountOut,
         address[] memory path,
         uint256[] memory lpFees
-    ) internal view returns (uint256[] memory amounts, uint256 feeAmount, address feeToken) {
+    ) internal view returns (uint256[] memory amounts, uint256 feeAmount) {
         require(path.length >= 2, 'GoosebumpsLibrary: INVALID_PATH');
         amounts = new uint256[](path.length);
         amounts[amounts.length - 1] = amountOut;
-        uint256 feeAmountTmp;
         for (uint256 i = path.length - 1; i > 0; i--) {
             (uint256 reserveIn, uint256 reserveOut) = 
                 getReserves(factories[i - 1], initPairHashes[i - 1], path[i - 1], path[i]);
-            (amounts[i - 1], feeAmountTmp) = getAmountIn(feeAggregator, path[i], 
-                feeAmount > 0 || i < amounts.length - 1, amounts[i], reserveIn, reserveOut, lpFees[i - 1]);
-            if (feeAmountTmp > 0) {
-                feeToken = path[i];
-                feeAmount = feeAmountTmp;
-            }
+            amounts[i - 1] = getAmountIn(amounts[i], reserveIn, reserveOut, lpFees[i - 1]);
         }
-
-        if (feeAmount == 0) {
-            (feeAmountTmp,) = IFeeAggregator(feeAggregator).calculateFee(path[0], amounts[0]);
-            if (feeAmountTmp > 0) {
-                feeToken = path[0];
-                feeAmount = feeAmountTmp;
-            }
-        }
+        (feeAmount,) = IFeeAggregator(feeAggregator).calculateFeeAndAmountIn(amounts[0]);
     }
 }

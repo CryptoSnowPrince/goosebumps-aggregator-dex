@@ -40,46 +40,58 @@ contract GoosebumpsRouterPairs is IGoosebumpsRouterPairs, Ownable {
     {
         return GoosebumpsLibrary.getReserves(factory, getInitHash(factory), tokenA, tokenB);
     }
-    function getAmountOut(address factory, address tokenIn, uint256 amountIn, uint256 reserveIn, uint256 reserveOut)
+    function getAmountOut(address factory, uint256 amountIn, uint256 reserveIn, uint256 reserveOut)
         external view override returns (uint256 amountOut, uint256 fee)
     {
-        return GoosebumpsLibrary.getAmountOut(feeAggregator, tokenIn, false, amountIn, reserveIn, reserveOut, getLPFee(factory));
+        (fee, amountIn) = IFeeAggregator(feeAggregator).calculateFeeAndAmountOut(amountIn);
+        amountOut = GoosebumpsLibrary.getAmountOut(amountIn, reserveIn, reserveOut, getLPFee(factory));
     }
     function getAmountOut(
         address factory,
-        address tokenIn,
         bool feePayed,
         uint256 amountIn, 
         uint256 reserveIn,
         uint256 reserveOut
     ) external view override returns (uint256 amountOut, uint256 fee)
     {
-        return GoosebumpsLibrary.getAmountOut(feeAggregator, tokenIn, feePayed, amountIn, reserveIn, reserveOut, getLPFee(factory));
+        if (!feePayed) {
+            (fee, amountIn) = IFeeAggregator(feeAggregator).calculateFeeAndAmountOut(amountIn);
+        }
+        amountOut = GoosebumpsLibrary.getAmountOut(amountIn, reserveIn, reserveOut, getLPFee(factory));
     }
-    function getAmountIn(address factory, address tokenOut, uint256 amountOut, uint256 reserveIn, uint256 reserveOut)
+    /**
+     * Note totalAmountIn = amountIn + fee
+     */
+    function getAmountIn(address factory, uint256 amountOut, uint256 reserveIn, uint256 reserveOut)
         external view override returns (uint256 amountIn, uint256 fee) 
     {
-        return GoosebumpsLibrary.getAmountIn(feeAggregator, tokenOut, false, amountOut, reserveIn, reserveOut, getLPFee(factory));
+        amountIn = GoosebumpsLibrary.getAmountIn(amountOut, reserveIn, reserveOut, getLPFee(factory));
+        (fee,) = IFeeAggregator(feeAggregator).calculateFeeAndAmountIn(amountIn);
     }
+    /**
+     * Note totalAmountIn = amountIn + fee
+     */
     function getAmountIn(
         address factory,
-        address tokenOut,
         bool feePayed,
         uint256 amountOut,
         uint256 reserveIn,
         uint256 reserveOut
     ) external view override returns (uint256 amountIn, uint256 fee) 
     {
-        return GoosebumpsLibrary.getAmountIn(feeAggregator, tokenOut, feePayed, amountOut, reserveIn, reserveOut, getLPFee(factory));
+        amountIn = GoosebumpsLibrary.getAmountIn(amountOut, reserveIn, reserveOut, getLPFee(factory));
+        if (!feePayed) {
+            (fee,) = IFeeAggregator(feeAggregator).calculateFeeAndAmountIn(amountIn);
+        }
     }
     function getAmountsOut(address[] calldata _factories, uint256 amountIn, address[] calldata path)
-        external view override returns (uint256[] memory amounts, uint256 feeAmount, address feeToken) 
+        external view override returns (uint256[] memory amounts, uint256 feeAmount) 
     {
         (bytes32[] memory hashes, uint256[] memory fees) = getInitHashesAndFees(_factories);
         return GoosebumpsLibrary.getAmountsOut(feeAggregator, _factories, hashes, amountIn, path, fees);
     }
     function getAmountsIn(address[] calldata _factories, uint256 amountOut, address[] calldata path)
-        external view override returns (uint256[] memory amounts, uint256 feeAmount, address feeToken) 
+        external view override returns (uint256[] memory amounts, uint256 feeAmount) 
     {
         (bytes32[] memory hashes, uint256[] memory fees) = getInitHashesAndFees(_factories);
         return GoosebumpsLibrary.getAmountsIn(feeAggregator, _factories, hashes, amountOut, path, fees);

@@ -236,12 +236,8 @@ contract GoosebumpsRouter is IGoosebumpsRouter {
         address[] memory factories, 
         uint256[] memory amounts, 
         address[] memory path, 
-        address _to, 
-        uint256 feeAmount, 
-        address feeToken
+        address _to
     ) internal {
-        if (path[0] == feeToken) transferFeeWhenNeeded(msg.sender, feeToken, feeAmount);
-
         for (uint256 i = 0; i < path.length - 1; i++) {
             (address input, address output) = (path[i], path[i + 1]);
             (address token0,) = GoosebumpsLibrary.sortTokens(input, output);
@@ -249,18 +245,13 @@ contract GoosebumpsRouter is IGoosebumpsRouter {
             address to = i < path.length - 2 
                 ? IGoosebumpsRouterPairs(routerPairs).pairFor(factories[i + 1], output, path[i + 2])
                 : _to;
-            if (output == path[path.length - 1] && output == feeToken)
-                amountOut += feeAmount;
-
+            (uint256 amount0Out, uint256 amount1Out) = input == token0 ? (uint256(0), amountOut) : (amountOut, uint256(0));
             _trySwap(
                 IGoosebumpsRouterPair(IGoosebumpsRouterPairs(routerPairs).pairFor(factories[i], input, output)),
-                input == token0 ? uint256(0) : amountOut,
-                input == token0 ? amountOut : uint256(0),
+                amount0Out,
+                amount1Out,
                 to
             );
-
-            if (output == path[path.length - 1] && output == feeToken)
-                transferFeeWhenNeeded(to, feeToken, feeAmount);
         }
     }
     function swapExactTokensForTokens(
@@ -272,11 +263,11 @@ contract GoosebumpsRouter is IGoosebumpsRouter {
         uint256 deadline
     ) external virtual override ensure(deadline) returns (uint256[] memory amounts) {
         uint256 feeAmount;
-        address feeToken;
-        (amounts, feeAmount, feeToken) = IGoosebumpsRouterPairs(routerPairs).getAmountsOut(factories, amountIn, path);
+        (amounts, feeAmount) = IGoosebumpsRouterPairs(routerPairs).getAmountsOut(factories, amountIn, path);
         require(amounts[amounts.length - 1] >= amountOutMin, 'GoosebumpsRouter: INSUFFICIENT_OUTPUT_AMOUNT');
 
-        transferAndSwap(factories, amounts, path, to, feeAmount, feeToken);
+        TransferHelper.safeTransferFrom(path[0], msg.sender, feeAggregator, feeAmount);
+        transferAndSwap(factories, amounts, path, to);
     }
     function swapTokensForExactTokens(
         address[] calldata factories,
@@ -287,14 +278,11 @@ contract GoosebumpsRouter is IGoosebumpsRouter {
         uint256 deadline
     ) external virtual override ensure(deadline) returns (uint256[] memory amounts) {
         uint256 feeAmount;
-        address feeToken;
-        (amounts, feeAmount, feeToken) = IGoosebumpsRouterPairs(routerPairs).getAmountsIn(factories, amountOut, path);
+        (amounts, feeAmount) = IGoosebumpsRouterPairs(routerPairs).getAmountsIn(factories, amountOut, path);
+        require(amounts[0] + feeAmount <= amountInMax, 'GoosebumpsRouter: EXCESSIVE_INPUT_AMOUNT');
 
-        uint256 totalAmount0 = amounts[0];
-        if (path[0] == feeToken) totalAmount0 += feeAmount;
-        require(totalAmount0 <= amountInMax, 'GoosebumpsRouter: EXCESSIVE_INPUT_AMOUNT');
-
-        transferAndSwap(factories, amounts, path, to, feeAmount, feeToken);
+        TransferHelper.safeTransferFrom(path[0], msg.sender, feeAggregator, feeAmount);
+        transferAndSwap(factories, amounts, path, to);
     }
     function swapExactETHForTokens(
         address[] calldata factories,
@@ -306,17 +294,14 @@ contract GoosebumpsRouter is IGoosebumpsRouter {
         require(path[0] == WETH, 'GoosebumpsRouter: INVALID_PATH');
 
         uint256 feeAmount;
-        address feeToken;
-        (amounts, feeAmount, feeToken) = IGoosebumpsRouterPairs(routerPairs).getAmountsOut(factories, msg.value, path);
-
+        (amounts, feeAmount) = IGoosebumpsRouterPairs(routerPairs).getAmountsOut(factories, msg.value, path);
         require(amounts[amounts.length - 1] >= amountOutMin, 'GoosebumpsRouter: INSUFFICIENT_OUTPUT_AMOUNT');
 
-        uint256 totalAmount0 = amounts[0];
-        if (path[0] == feeToken) totalAmount0 += feeAmount;
-        IWETH(WETH).deposit{value: totalAmount0}();
+        IWETH(WETH).deposit{value: msg.value}();
+        assert(IWETH(WETH).transfer(feeAggregator, feeAmount));
         assert(IWETH(WETH).transfer(IGoosebumpsRouterPairs(routerPairs).pairFor(factories[0], path[0], path[1]), amounts[0]));
 
-        _swap(factories, amounts, path, to, feeAmount, feeToken);
+        _swap(factories, amounts, path, to);
     }
     function swapTokensForExactETH(
         address[] calldata factories,
@@ -327,15 +312,13 @@ contract GoosebumpsRouter is IGoosebumpsRouter {
         uint256 deadline
     ) external virtual override ensure(deadline) returns (uint256[] memory amounts) {
         require(path[path.length - 1] == WETH, 'GoosebumpsRouter: INVALID_PATH');
+        
         uint256 feeAmount;
-        address feeToken;
-        (amounts, feeAmount, feeToken) = IGoosebumpsRouterPairs(routerPairs).getAmountsIn(factories, amountOut, path);
+        (amounts, feeAmount) = IGoosebumpsRouterPairs(routerPairs).getAmountsIn(factories, amountOut, path);
+        require(amounts[0] + feeAmount <= amountInMax, 'GoosebumpsRouter: EXCESSIVE_INPUT_AMOUNT');
 
-        uint256 totalAmount0 = amounts[0];
-        if (path[0] == feeToken) totalAmount0 += feeAmount;
-        require(totalAmount0 <= amountInMax, 'GoosebumpsRouter: EXCESSIVE_INPUT_AMOUNT');
-
-        transferAndSwap(factories, amounts, path, address(this), feeAmount, feeToken);
+        TransferHelper.safeTransferFrom(path[0], msg.sender, feeAggregator, feeAmount);
+        transferAndSwap(factories, amounts, path, address(this));
 
         IWETH(WETH).withdraw(amounts[amounts.length - 1]);
         TransferHelper.safeTransferETH(to, amounts[amounts.length - 1]);
@@ -349,12 +332,13 @@ contract GoosebumpsRouter is IGoosebumpsRouter {
         uint256 deadline
     ) external virtual override ensure(deadline) returns (uint256[] memory amounts) {
         require(path[path.length - 1] == WETH, 'GoosebumpsRouter: INVALID_PATH');
+
         uint256 feeAmount;
-        address feeToken;
-        (amounts, feeAmount, feeToken) = IGoosebumpsRouterPairs(routerPairs).getAmountsOut(factories, amountIn, path);
+        (amounts, feeAmount) = IGoosebumpsRouterPairs(routerPairs).getAmountsOut(factories, amountIn, path);
         require(amounts[amounts.length - 1] >= amountOutMin, 'GoosebumpsRouter: INSUFFICIENT_OUTPUT_AMOUNT');
 
-        transferAndSwap(factories, amounts, path, address(this), feeAmount, feeToken);
+        TransferHelper.safeTransferFrom(path[0], msg.sender, feeAggregator, feeAmount);
+        transferAndSwap(factories, amounts, path, address(this));
 
         IWETH(WETH).withdraw(amounts[amounts.length - 1]);
         TransferHelper.safeTransferETH(to, amounts[amounts.length - 1]);
@@ -369,16 +353,15 @@ contract GoosebumpsRouter is IGoosebumpsRouter {
         require(path[0] == WETH, 'GoosebumpsRouter: INVALID_PATH');
 
         uint256 feeAmount;
-        address feeToken;
-        (amounts, feeAmount, feeToken) = IGoosebumpsRouterPairs(routerPairs).getAmountsIn(factories, amountOut, path);
+        (amounts, feeAmount) = IGoosebumpsRouterPairs(routerPairs).getAmountsIn(factories, amountOut, path);
 
-        uint256 totalAmount0 = amounts[0];
-        if (path[0] == feeToken) totalAmount0 += feeAmount;
+        uint256 totalAmount0 = amounts[0] + feeAmount;
         require(totalAmount0 <= msg.value, 'GoosebumpsRouter: EXCESSIVE_INPUT_AMOUNT');
         IWETH(WETH).deposit{value: totalAmount0}();
+        assert(IWETH(WETH).transfer(feeAggregator, feeAmount));
         assert(IWETH(WETH).transfer(IGoosebumpsRouterPairs(routerPairs).pairFor(factories[0], path[0], path[1]), amounts[0]));
 
-        _swap(factories, amounts, path, to, feeAmount, feeToken);
+        _swap(factories, amounts, path, to);
 
         // refund dust eth, if any
         if (msg.value > totalAmount0) TransferHelper.safeTransferETH(msg.sender, msg.value - totalAmount0);
@@ -393,7 +376,6 @@ contract GoosebumpsRouter is IGoosebumpsRouter {
             (address input, address output) = (path[i], path[i + 1]);
             (address token0,) = GoosebumpsLibrary.sortTokens(input, output);
             IGoosebumpsRouterPair pair = IGoosebumpsRouterPair(IGoosebumpsRouterPairs(routerPairs).pairFor(factories[i], input, output));
-
             uint256 amountInput;
             uint256 amountOutput;
             { // scope to avoid stack too deep errors
@@ -402,7 +384,6 @@ contract GoosebumpsRouter is IGoosebumpsRouter {
             amountInput = IERC20(input).balanceOf(address(pair)) - reserveInput;
             (amountOutput,) = IGoosebumpsRouterPairs(routerPairs).getAmountOut(
                 factories[i],
-                input,
                 true,
                 amountInput,
                 reserveInput,
@@ -410,8 +391,6 @@ contract GoosebumpsRouter is IGoosebumpsRouter {
             );
             }
             (uint256 amount0Out, uint256 amount1Out) = input == token0 ? (uint256(0), amountOutput) : (amountOutput, uint256(0));
-
-            // fee is only payed on the first or last token
             address to = i < path.length - 2 ? IGoosebumpsRouterPairs(routerPairs).pairFor(factories[i + 1], output, path[i + 2]) : _to;
             _trySwap(pair, amount0Out, amount1Out, to);
         }
@@ -424,8 +403,9 @@ contract GoosebumpsRouter is IGoosebumpsRouter {
         address to,
         uint256 deadline
     ) external virtual override ensure(deadline) {
-        (amountIn,) = subtractFee(msg.sender, path[0], amountIn);
-
+        uint256 feeAmount;
+        (feeAmount, amountIn) = IFeeAggregator(feeAggregator).calculateFeeAndAmountOut(amountIn);
+        TransferHelper.safeTransferFrom(path[0], msg.sender, feeAggregator, feeAmount);
         TransferHelper.safeTransferFrom(
             path[0], msg.sender, IGoosebumpsRouterPairs(routerPairs).pairFor(factories[0], path[0], path[1]), amountIn
         );
@@ -448,8 +428,9 @@ contract GoosebumpsRouter is IGoosebumpsRouter {
         uint256 amountIn = msg.value;
         IWETH(WETH).deposit{value: amountIn}();
         
-        (amountIn,) = subtractFee(msg.sender, WETH, amountIn);
-
+        uint256 feeAmount;
+        (feeAmount, amountIn) = IFeeAggregator(feeAggregator).calculateFeeAndAmountOut(amountIn);
+        assert(IWETH(WETH).transfer(feeAggregator, feeAmount));
         assert(IWETH(WETH).transfer(IGoosebumpsRouterPairs(routerPairs).pairFor(factories[0], path[0], path[1]), amountIn));
 
         uint256 balanceBefore = IERC20(path[path.length - 1]).balanceOf(to);
@@ -469,8 +450,9 @@ contract GoosebumpsRouter is IGoosebumpsRouter {
     ) external virtual override ensure(deadline) {
         require(path[path.length - 1] == WETH, 'GoosebumpsRouter: INVALID_PATH');
 
-        (amountIn,) = subtractFee(msg.sender, path[0], amountIn);
-        
+        uint256 feeAmount;
+        (feeAmount, amountIn) = IFeeAggregator(feeAggregator).calculateFeeAndAmountOut(amountIn);
+        TransferHelper.safeTransferFrom(path[0], msg.sender, feeAggregator, feeAmount);
         TransferHelper.safeTransferFrom(
             path[0], msg.sender, IGoosebumpsRouterPairs(routerPairs).pairFor(factories[0], path[0], path[1]), amountIn
         );
@@ -489,9 +471,7 @@ contract GoosebumpsRouter is IGoosebumpsRouter {
         address[] calldata factories,
         uint256[] memory amounts,
         address[] calldata path,
-        address to,
-        uint256 feeAmount,
-        address feeToken
+        address to
     ) internal {
         TransferHelper.safeTransferFrom(
             path[0],
@@ -500,23 +480,12 @@ contract GoosebumpsRouter is IGoosebumpsRouter {
             amounts[0]
         );
 
-        _swap(factories, amounts, path, to, feeAmount, feeToken);
+        _swap(factories, amounts, path, to);
     }
     function _trySwap(IGoosebumpsRouterPair pair, uint256 amount0Out, uint256 amount1Out, address to) internal {
         try pair.swap(amount0Out, amount1Out, to, new bytes(0)) {
         } catch (bytes memory /*lowLevelData*/) {
             pair.swap(amount0Out, amount1Out, to);
-        }
-    }
-    function subtractFee(address from, address token, uint256 amount) 
-        internal virtual returns(uint256 amountLeft, uint256 fee) 
-    {
-        (fee, amountLeft) = IFeeAggregator(feeAggregator).calculateFee(token, amount);
-        transferFeeWhenNeeded(from, token, fee);
-    }
-    function transferFeeWhenNeeded(address from, address token, uint256 fee) internal virtual {
-        if (fee > 0) {
-            TransferHelper.safeTransferFrom(token, from, feeAggregator, fee);
         }
     }
 }
