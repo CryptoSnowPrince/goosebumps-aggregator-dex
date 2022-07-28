@@ -2,6 +2,8 @@
   "name": "goosebumps-aggregator-dex",
   "dependencies": {
     "dotenv": "^16.0.1",
+    "ethereum-waffle": "^3.4.4",
+    "ethers": "^5.6.9",
     "hardhat": "^2.10.0"
   },
   "devDependencies": {
