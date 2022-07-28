@@ -32,6 +32,13 @@ contract GoosebumpsRouter is IGoosebumpsRouter {
         address _WETH,
         address _aggregator
     ) {
+        require(
+            _baseFactory != address(0) &&
+            _routerPairs != address(0) &&
+            _WETH != address(0) &&
+            _aggregator != address(0),
+            "GoosebumpsRouter: ZERO_ADDRESS"
+        );
         WETH = _WETH;
         baseFactory = _baseFactory;
         routerPairs = _routerPairs;
