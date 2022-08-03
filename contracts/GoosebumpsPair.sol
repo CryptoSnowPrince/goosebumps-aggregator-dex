@@ -74,7 +74,7 @@ contract GoosebumpsPair is GoosebumpsERC20 {
      * @dev `initialize` is called once by the factory at time of deployment.
      * 
      * Note When `initialize` is called, input params are checked by the factory, 
-     * and the Goosebumps eco-system use the pair contracts that are deployed by the factory, not EOA. 
+     * and the Goosebumps eco-system uses the pair contracts that are deployed by the factory, not EOA. 
      * Because of this, `zero-address check` is skipped.
      */
     function initialize(address _token0, address _token1) external {
