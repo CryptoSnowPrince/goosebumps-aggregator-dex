@@ -16,12 +16,13 @@ contract GoosebumpsPair is GoosebumpsERC20 {
     bytes4 private constant SELECTOR = bytes4(keccak256(bytes('transfer(address,uint256)')));
 
     /**
-     * @dev `factory` must be GoosebumpsFactory contract address.
+     * @dev `factory` must be the GoosebumpsFactory address.
      *
-     * Note GoosebumpsPair contract can be deploy by any EOA, 
-     * but in this case, `factory` is not GoosebumpsFactory contract address.
-     * GoosebumpsPair contract that is deployed by any EOA never use in Goosebumps eco-system 
-     * because `factory` is an EOA, not GoosebumpsFactory contract address.
+     * Note GoosebumpsPair contract can be deployed by any EOA, 
+     * but in this case, `factory` is not the GoosebumpsFactory address.
+     * Because of this, GoosebumpsPair contract that is deployed by any EOA never used in Goosebumps ecosystem.
+     * So, `factory` of all GoosebumpsPair is GoosebumpsFactory, not EOA.
+     * As a result, we are already using smart-contract-based accounts for GoosebumpsPair security in our ecosystem.
      */
     address public immutable factory;
     address public token0;
@@ -74,7 +75,7 @@ contract GoosebumpsPair is GoosebumpsERC20 {
      * @dev `initialize` is called once by the factory at time of deployment.
      * 
      * Note When `initialize` is called, input params are checked by the factory, 
-     * and the Goosebumps eco-system uses the pair contracts that are deployed by the factory, not EOA. 
+     * and the Goosebumps ecosystem uses the pair contracts that are deployed by the factory, not EOA. 
      * Because of this, `zero-address check` is skipped.
      */
     function initialize(address _token0, address _token1) external {
