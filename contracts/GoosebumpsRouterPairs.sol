@@ -138,7 +138,6 @@ contract GoosebumpsRouterPairs is IGoosebumpsRouterPairs, Ownable {
         emit LogRemoveFactory(_factory);
     }
     function hasFactory(address _factory) public override view returns (bool) {
-        require(_factory != address(0), "GoosebumpsRouterPairs: ZERO_ADDRESS");
         return factories.contains(_factory);
     }
     function allFactories() external override view returns (address[] memory) {
