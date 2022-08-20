@@ -4,7 +4,7 @@ pragma solidity 0.8.7;
 
 contract GoosebumpsERC20 {
     string public constant name = 'Goosebumps LPs';
-    string public constant symbol = 'Goosebumps-LP';
+    string public constant symbol = 'Goose-lp';
     uint8 public constant decimals = 18;
     uint256 public totalSupply;
     mapping(address => uint256) public balanceOf;
