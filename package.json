@@ -1,10 +1,38 @@
 {
-  "name": "goosebumps-aggregator-dex",
+  "name": "@goosebumps/goosebumps-aggregator-dex",
+  "license": "MIT",
+  "version": "0.0.1",
+  "description": "Smart Contracts for goosebumps-aggregator-dex",
+  "engines": {
+    "node": ">=16.16.0"
+  },
+  "homepage": "https://goosebumps.finance",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/CryptoSnowPrince/goosebumps-aggregator-dex.git"
+  },
+  "keywords": [
+    "goosebumps",
+    "bsc",
+    "bsctestnet",
+    "ethereum",
+    "polygon"
+  ],
+  "publishConfig": {
+    "registry": "https://registry.npmjs.org/"
+  },
+  "files": [
+    "abi",
+    "artifacts",
+    "contracts",
+    "typechain"
+  ],
   "dependencies": {
     "dotenv": "^16.0.1",
     "hardhat": "^2.10.0"
   },
   "devDependencies": {
     "@nomicfoundation/hardhat-toolbox": "^1.0.1"
-  }
+  },
+  "author": "cryptosnowprince <topdirector2017@gmail.com>"
 }
