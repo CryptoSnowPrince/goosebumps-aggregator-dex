@@ -11,6 +11,11 @@
     "type": "git",
     "url": "git+https://github.com/CryptoSnowPrince/goosebumps-aggregator-dex.git"
   },
+  "scripts": {
+    "clean": "npx hardhat clean",
+    "compile": "npx hardhat compile",
+    "publish": "npm publish --access public"
+  },
   "keywords": [
     "goosebumps",
     "bsc",
