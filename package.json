@@ -1,7 +1,7 @@
 {
   "name": "@goosebumps/goosebumps-aggregator-dex",
   "license": "MIT",
-  "version": "0.0.2",
+  "version": "0.0.3",
   "description": "Smart Contracts for goosebumps-aggregator-dex",
   "engines": {
     "node": ">=16.16.0"
@@ -24,9 +24,6 @@
     "ethereum",
     "polygon"
   ],
-  "publishConfig": {
-    "registry": "https://registry.npmjs.org/"
-  },
   "files": [
     "abi",
     "artifacts",
