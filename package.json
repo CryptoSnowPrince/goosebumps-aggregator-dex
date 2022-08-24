@@ -1,7 +1,7 @@
 {
   "name": "@goosebumps/goosebumps-aggregator-dex",
   "license": "MIT",
-  "version": "0.0.3",
+  "version": "0.0.5",
   "description": "Smart Contracts for goosebumps-aggregator-dex",
   "engines": {
     "node": ">=16.16.0"
@@ -13,9 +13,7 @@
   },
   "scripts": {
     "clean": "npx hardhat clean",
-    "compile": "npx hardhat compile",
-    "login": "npm login",
-    "publish": "npm publish --access public"
+    "compile": "npx hardhat compile"
   },
   "keywords": [
     "goosebumps",
