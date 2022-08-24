@@ -30,7 +30,7 @@
     "abi",
     "artifacts",
     "contracts",
-    "typechain"
+    "typechain-types"
   ],
   "dependencies": {
     "dotenv": "^16.0.1",
