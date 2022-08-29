@@ -100,7 +100,7 @@ contract GoosebumpsPair is GoosebumpsERC20 {
         emit Sync(reserve0, reserve1);
     }
 
-    // if fee is on, mint liquidity equivalent to 1/6th of the growth in sqrt(k)
+    // if fee is on, mint liquidity equivalent to 1/2th of the growth in sqrt(k)
     function _mintFee(uint112 _reserve0, uint112 _reserve1) private returns (bool feeOn) {
         address feeTo = IGoosebumpsFactory(factory).feeTo();
         feeOn = feeTo != address(0);
@@ -111,7 +111,7 @@ contract GoosebumpsPair is GoosebumpsERC20 {
                 uint256 rootKLast = Math.sqrt(_kLast);
                 if (rootK > rootKLast) {
                     uint256 numerator = totalSupply * (rootK - rootKLast);
-                    uint256 denominator = rootK * 5 + rootKLast;
+                    uint256 denominator = rootK + rootKLast;
                     uint256 liquidity = numerator / denominator;
                     if (liquidity > 0) _mint(feeTo, liquidity);
                 }
@@ -192,8 +192,8 @@ contract GoosebumpsPair is GoosebumpsERC20 {
         uint256 amount1In = balance1 > _reserve1 - amount1Out ? balance1 - (_reserve1 - amount1Out) : 0;
         require(amount0In > 0 || amount1In > 0, 'GoosebumpsPair: INSUFFICIENT_INPUT_AMOUNT');
         { // scope for reserve{0,1}Adjusted, avoids stack too deep errors
-        uint256 balance0Adjusted = balance0 * 1000 - amount0In * 3;
-        uint256 balance1Adjusted = balance1 * 1000 - amount1In * 3;
+        uint256 balance0Adjusted = balance0 * 1000 - amount0In;
+        uint256 balance1Adjusted = balance1 * 1000 - amount1In;
         require(balance0Adjusted * balance1Adjusted >= uint256(_reserve0) * _reserve1 * 1000**2, 'GoosebumpsPair: K');
         }
 
